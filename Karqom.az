@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kargom.az – Onsuz olmaz</title>
+    <style>
+        :root {
+            --navy: #0A1628;
+            --navy2: #0F1E38;
+            --navy3: #162444;
+            --yellow: #F5C800;
+            --yellow2: #FFD700;
+            --blue-card: #1A2E52;
+            --blue-card2: #1E3560;
+            --green: #22C55E;
+            --white: #FFFFFF;
+            --grey: #94A3B8;
+            --text-grey: #a0aec0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Syne', 'DM Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--navy);
+            color: var(--white);
+            line-height: 1.6;
+        }
+
+        /* Navigasiya paneli */
+        header {
+            background-color: rgba(10, 22, 40, 0.95);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo h1 {
+            color: var(--yellow);
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .contact-btn {
+            background-color: var(--yellow);
+            color: var(--navy);
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Hero hissəsi */
+        .hero {
+            padding: 120px 20px 60px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--navy) 0%, var(--navy3) 100%);
+        }
+
+        .hero h2 {
+            font-weight: 700;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            color: var(--text-grey);
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .hero-graphics {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .az-map {
+            width: 150px;
+            height: auto;
+        }
+
+        .app-mockup {
+            width: 250px;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        /* Problem və Həll hissəsi */
+        .grid-section {
+            padding: 60px 20px;
+        }
+
+        .grid-title {
+            text-align: center;
+            color: var(--yellow);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+
+        .problem-grid, .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--blue-card);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--navy3);
+        }
+
+        .card h4 {
+            color: var(--yellow);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: var(--text-grey);
+            font-size: 14px;
+        }
+
+        .problem-card .icon, .solution-card .icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .solution-grid .icon {
+            color: var(--green);
+        }
+
+        /* User feedback */
+        .feedback {
+            padding: 60px 20px;
+            background-color: var(--yellow);
+            color: var(--navy);
+            text-align: center;
+        }
+
+        .feedback h3 {
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .feedback p.desc {
+            margin-bottom: 40px;
+            color: var(--navy2);
+        }
+
+        .feedback-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .feedback-card {
+            background-color: var(--white);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .user-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            background-color: #ddd; /* Placeholder */
+        }
+
+        .user-name h5 {
+            font-weight: 600;
+        }
+
+        .rating {
+            color: var(--yellow);
+        }
+
+        /* Komanda hissəsi */
+        .team {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .team-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .team-member {
+            background-color: var(--blue-card);
+            padding: 30px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--navy3);
+        }
+
+        .team-member img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid var(--yellow);
+            background-color: #ddd; /* Placeholder */
+        }
+
+        .team-member h5 {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .team-member p.role {
+            color: var(--yellow);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .team-member p.bio {
+            font-size: 13px;
+            color: var(--text-grey);
+        }
+
+        /* Aşağı hissə */
+        footer {
+            background-color: var(--navy3);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        footer h4 {
+            font-weight: 700;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        footer h4 .tag {
+            color: var(--yellow);
+        }
+
+        .footer-links {
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-grey);
+            margin: 0 10px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .contacts {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--text-grey);
+            font-size: 14px;
+        }
+
+        .logo-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 5px;
+        }
+
+        .logo-footer .tag-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: var(--yellow);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <h1>Kargom.az</h1>
+        </div>
+        <a href="#contact" class="contact-btn">Bizi Tap</a>
+    </header>
+
+    <section class="hero">
+        <h2>Onsuz olmaz</h2>
+        <p>Compare all cargo companies in one place<br>and choose the best option in seconds.</p>
+        <div class="hero-graphics">
+            <span class="az-map" style="font-size: 80px; color: var(--yellow);">&#127760;</span>
+            <span class="app-mockup" style="font-size: 120px; color: var(--grey);">&#128241;</span>
+        </div>
+    </section>
+
+    <section class="grid-section">
+        <h3 class="grid-title">The Pain of Ordering from Abroad</h3>
+        <div class="problem-grid">
+            <div class="card problem-card">
+                <span class="icon">&#128336;</span>
+                <h4>Wasted Time</h4>
+                <p>Hours spent searching companies on Instagram and WhatsApp.</p>
+            </div>
+            <div class="card problem-card">
+                <span class="icon">&#128269;</span>
+                <h4>No Transparency</h4>
+                <p>No clear prices or accurate delivery timelines.</p>
+            </div>
+            <div class="card problem-card">
+                <span class="icon">&#128213;</span>
+                <h4>Information Chaos</h4>
+                <p>Critical information scattered across different platforms.</p>
+            </div>
+            <div class="card problem-card">
+                <span class="icon">&#128220;</span>
+                <h4>Hard to Choose</h4>
+                <p>No easy way to compare options side by side.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid-section" style="background-color: var(--navy2);">
+        <h3 class="grid-title">Cargo Made Simple and Transparent</h3>
+        <div class="solution-grid">
+            <div class="card solution-card">
+                <span class="icon">&#128421;</span>
+                <h4>One Platform</h4>
+                <p>All cargo companies centralized in a single interface.</p>
+            </div>
+            <div class="card solution-card">
+                <span class="icon">&#127911;</span>
+                <h4>Live Prices</h4>
+                <p>Real-time pricing and accurate delivery times upfront.</p>
+            </div>
+            <div class="card solution-card">
+                <span class="icon">&#128230;</span>
+                <h4>2-Click Compare</h4>
+                <p>Evaluate carriers side by side instantly.</p>
+            </div>
+            <div class="card solution-card">
+                <span class="icon">&#129321;</span>
+                <h4>Speed</h4>
+                <p>Decide fast and proceed to checkout without stress.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="feedback">
+        <h3>Transparency</h3>
+        <p class="desc">Surveyed users agree</p>
+        <div class="feedback-cards">
+            <div class="feedback-card">
+                <div class="user">
+                    <img src="path/to/ali_photo.jpg" alt="" class="user-photo">
+                    <div class="user-name">
+                        <h5>Ali R.</h5>
+                        <div class="rating">★★★★★</div>
+                    </div>
+                </div>
+                <p>"Finally, clear pricing before I order. Saves me hours of WhatsApp messaging."</p>
+            </div>
+            <div class="feedback-card">
+                <div class="user">
+                    <img src="path/to/leyla_photo.jpg" alt="" class="user-photo">
+                    <div class="user-name">
+                        <h5>Leyla K.</h5>
+                        <div class="rating">★★★★★</div>
+                    </div>
+                </div>
+                <p>"The fastest way to find a warehouse pickup option. Totally transparent."</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="team">
+        <h3 class="team-title">Our Team</h3>
+        <div class="team-grid">
+            <div class="team-member">
+                <img src="path/to/nijat_photo.jpg" alt="">
+                <h5>Nijat Hasanov</h5>
+                <p class="role">Chief Executive Officer</p>
+                <p class="bio">10+ years scaling e-commerce platforms and cross-border logistics.</p>
+            </div>
+            <div class="team-member">
+                <img src="path/to/aysel_photo.jpg" alt="">
+                <h5>Aysel Mammadova</h5>
+                <p class="role">Head of Product</p>
+                <p class="bio">Former lead designer at top regional fintech, obsessed with UX friction.</p>
+            </div>
+            <div class="team-member">
+                <img src="path/to/elvin_photo.jpg" alt="">
+                <h5>Elvin Guliyev</h5>
+                <p class="role">Chief Technology Officer</p>
+                <p class="bio">Architect of high-volume data aggregation and live pricing APIs.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <h4>Kargom.az <span class="tag">Onsuz olmaz</span></h4>
+        <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+        </div>
+        <div class="contacts">
+            <p>Email: hello@kargom.az</p>
+            <p>Website: kargom.az</p>
+            <p>Phone: +994 XX XXX XX XX</p>
+        </div>
+        <div class="logo-footer">
+            <span>Kargom.az</span> <span class="tag-icon"></span>
+        </div>
+    </footer>
+
+</body>
+</html>
