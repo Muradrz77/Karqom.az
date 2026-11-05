@@ -218,8 +218,14 @@ const CONCLUSION_MARKERS = ["in conclusion", "to sum up", "overall", "to conclud
 const EXAMPLE_MARKERS = ["for example", "for instance", "such as", "because", "since"];
 
 // Bağlayıcı sözlər
-const LINKERS = ["also", "firstly", "secondly", "finally", "moreover", "in addition",
-  "however", "although", "on the other hand", "therefore", "furthermore", "as a result"];
+// Kitabdakı bağlayıcılar: əlavə, səbəb, nümunə, əks fikir, nəticə, ardıcıllıq, yekunlaşdırma
+const LINKERS = ["also", "in addition", "moreover", "furthermore",
+  "because", "since", "because of", "due to",
+  "for example", "for instance", "such as",
+  "however", "although", "while", "but", "even though", "on the other hand",
+  "therefore", "as a result", "consequently",
+  "first", "firstly", "second", "secondly", "next", "then", "finally",
+  "in conclusion", "to conclude", "to sum up", "overall", "in summary"];
 
 // Lehinə fikir göstəriciləri
 const PRO_MARKERS = OPINION_MARKERS.concat(["advantage", "advantages", "benefit", "benefits",
@@ -240,6 +246,42 @@ const FUNCTION_WORDS = new Set([
   "we","you","he","she","my","our","their","its","them","me","us","do","does","have","has",
   "there","these","those","which","who","if","because","also","very"
 ]);
+
+// Kitabdakı şablon ifadələr (əzbər cümlələr – üslub xəbərdarlığı)
+const TEMPLATE_PHRASES = ["nowadays, this is a very important topic",
+  "there are many advantages and disadvantages", "in this paragraph, i will",
+  "in this essay, i will", "this essay will discuss"];
+
+// Mövzunun elan edilməsi (announcement) – topic sentence kimi qəbul olunmur
+const ANNOUNCEMENT_RE = /\b(in this (paragraph|essay)|i will (write|discuss|talk|explain)|this essay (will|is about))\b/i;
+
+// Kitabdakı cümlə modelləri (B meyarında məlumat üçün sayılır)
+const PATTERNS = [
+  { name: "I believe that", re: /\bi (believe|think) that\b/i },
+  { name: "In my opinion", re: /\b(in my opinion|from my point of view|as far as i am concerned)\b/i },
+  { name: "One important reason is that", re: /\bone important reason is that\b/i },
+  { name: "This is because", re: /\bthis is because\b/i },
+  { name: "The main reason for this is that", re: /\bthe main reason for this is that\b/i },
+  { name: "This means that", re: /\bthis means that\b/i },
+  { name: "In other words", re: /\bin other words\b/i },
+  { name: "Students should be allowed to", re: /\bshould be allowed to\b/i },
+  { name: "Rather than", re: /\brather than\b/i },
+  { name: "Although + idea", re: /\balthough\b/i },
+  { name: "As a result", re: /\bas a result\b/i },
+  { name: "Some people argue", re: /\bsome people (argue|believe|think|say)\b/i },
+  { name: "On the other hand", re: /\bon the other hand\b/i },
+  { name: "Such as", re: /\bsuch as\b/i }
+];
+
+// Kitabdakı 8 mövzunun lüğəti (tək sözlər) – D meyarında məlumat üçün
+const TOPIC_WORDS = new Set(("impact advantage disadvantage benefit innovation influence tool solution communication distraction privacy security access entertainment society development facilitate rely connect transform replace consume harm improve limit allow create modern convenient harmful useful virtual global efficient artificial dangerous essential instant reliable " +
+  "improvement knowledge skill opportunity environment method approach performance achievement challenge curriculum literacy resource motivation provide acquire encourage focus participate achieve require evaluate enhance prepare overcome adapt support educational effective beneficial interactive mandatory practical academic independent competitive " +
+  "heritage tradition diversity identity masterpiece exhibition value belief generation custom perspective symbol creativity audience foundation preserve represent reflect appreciate inherit express celebrate promote respect perform cultural traditional unique diverse historical valuable ancient creative universal significant authentic contemporary " +
+  "plot character viewer genre director scene message review industry soundtrack effect script episode hero protagonist portray depict convey entertain inspire direct recommend release nominate shoot captivate entertaining inspiring realistic fictional emotional thrilling spectacular predictable outstanding violent moving " +
+  "habitat extinction pollution species ecosystem conservation deforestation predator prey emission waste threat mammal protect survive pollute destroy endanger conserve threaten recycle vanish reduce environmental endangered wild domestic sustainable toxic natural cruel renewable rare vital " +
+  "destination tourism landmark accommodation journey infrastructure horizon resident sightseeing landscape experience border distance souvenir guide transport explore broaden attract discover commute book immerse navigate encounter depart foreign local historic breathtaking crowded picturesque remote accessible unforgettable hospitable scenic commercial " +
+  "career profession qualification salary employee employer colleague productivity responsibility promotion unemployment workplace requirement balance retirement hire resign earn collaborate manage pursue supervise dismiss overwork negotiate professional demanding rewarding dedicated qualified ambitious lucrative stressful flexible " +
+  "teamwork discipline bond trust competition conflict rival commitment defeat argument mutual collaboration resilience empathy perseverance foster endurance resolution harmony solidarity dedication cultivate strategy well sportsmanship mentorship adversary coordinate interpersonal resolve outcome tension obligation crucial tolerate contribute participation").split(" "));
 
 // İngilis dilini tanımaq üçün ən çox işlənən sözlər
 const ENGLISH_COMMON = new Set(["the","a","an","is","are","of","to","and","in","it","this",
@@ -368,9 +410,11 @@ function checkA(text, words, sentences) {
   const linkers = findPhrases(text, LINKERS);
 
   const checks = [
-    [getWords(first).length >= 6 && !first.endsWith("?") && !startsWithAny(first, CONCLUSION_MARKERS),
+    [getWords(first).length >= 6 && !first.endsWith("?") && !startsWithAny(first, CONCLUSION_MARKERS) && !ANNOUNCEMENT_RE.test(first),
       "Əsas fikir cümləsi (topic sentence)",
-      `1-ci cümlə ("${snippet(first)}") əsas fikri aydın bildirmir (çox qısadır və ya sualdır).`],
+      ANNOUNCEMENT_RE.test(first)
+        ? `1-ci cümlə ("${snippet(first)}") elan (announcement) cümləsidir. Əsas fikri birbaşa yazın.`
+        : `1-ci cümlə ("${snippet(first)}") əsas fikri aydın bildirmir (çox qısadır və ya sualdır).`],
     [support.length >= 2, `Dəstəkləyici fikirlər: ${support.length}`,
       `Ən azı 2 dəstəkləyici cümlə lazımdır, ${support.length} tapıldı.`],
     [startsWithAny(last, CONCLUSION_MARKERS), "Yekun fikir",
@@ -384,6 +428,10 @@ function checkA(text, words, sentences) {
     items.push([ok, label]);
     if (ok !== true) errors.push(["STR", err, ok === "forgiven" ? "info" : ""]);
   });
+
+  // Şablon ifadə varsa məlumat xəbərdarlığı (bala təsir etmir)
+  const tpl = TEMPLATE_PHRASES.filter(p => text.toLowerCase().includes(p));
+  if (tpl.length) errors.push(["STR", `Şablon ifadə tapıldı: "${tpl[0]}". Mövzuya uyğun öz cümlənizi yazın.`, "info"]);
 
   const found = checks.filter(c => c[0] !== false).length;
   const strScore = found === checks.length ? 1 : found >= 1 ? 0.5 : 0;
@@ -424,6 +472,8 @@ function checkB(text, support) {
   // Görməzdən gəlinən səhvlər ödənmiş kimi sayılır
   const count = [argsOk, exOk, lnkOk, bothOk].filter(x => x !== false).length;
   const score = count === 4 ? 2 : count >= 1 ? 1 : 0;
+  const pats = PATTERNS.filter(p => p.re.test(text)).map(p => p.name);
+  items.push(["info", `Kitabdakı cümlə modelləri: ${pats.length}` + (pats.length ? ` (${pats.slice(0, 4).join(", ")})` : "")]);
   items.push(["info", "Mövzuya uyğunluq və arqumentlərin keyfiyyəti avtomatik tam yoxlanmır – aşağıdakı müəllim siyahısına baxın."]);
   return { score, max: 2, items, errors };
 }
@@ -491,6 +541,9 @@ function checkD(words) {
   items.push([ratioOk, `Unikal söz nisbəti: ${ratio.toFixed(2)} (${unique} / ${content.length})`]);
   items.push([repOk, `3+ dəfə təkrarlanan sözlər: ${repeated.length}`]);
   repeated.forEach(([w, n]) => errors.push(["WW", `"${w}" sözü ${n} dəfə işlənib. Sinonim işlədin.`]));
+
+  const topicHits = Object.keys(freq).filter(w => TOPIC_WORDS.has(w));
+  items.push(["info", `Kitabın mövzu lüğətindən söz: ${topicHits.length}`]);
 
   let score;
   if (ratioOk !== false && repOk !== false) score = 1;
