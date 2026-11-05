@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Winson Academy – Esse yoxlama aləti</title>
+<style>
+  /* ===== Rənglər (Winson Academy üslubu) ===== */
+  :root {
+    --orange: #F26B1D;     /* əsas rəng */
+    --orange-bg: #FFF4EC;  /* açıq narıncı fon */
+    --text: #2B2B2B;       /* tünd boz mətn */
+    --green: #2E9E4F;      /* düzgün */
+    --red: #D93C3C;        /* səhv */
+    --blue: #2F6FD6;       /* məlumat */
+    --line: #F6D9C4;
+    --muted: #6B6B6B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--orange-bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ===== Başlıq ===== */
+  header {
+    background: var(--orange);
+    color: #fff;
+    text-align: center;
+    padding: 22px 16px 18px;
+  }
+  header h1 { margin: 0; font-size: 1.8rem; letter-spacing: .14em; font-weight: 800; }
+  header p  { margin: 4px 0 0; font-size: 1.05rem; opacity: .95; }
+
+  main { max-width: 920px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(242,107,29,.07);
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
+
+  /* ===== Rejim seçimi ===== */
+  .modes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .modes label {
+    flex: 1 1 240px;
+    display: flex; align-items: center; gap: 8px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .modes label.active { border-color: var(--orange); background: var(--orange-bg); }
+  .modes input { accent-color: var(--orange); width: 18px; height: 18px; }
+
+  .field-label { display: block; font-weight: 600; margin: 0 0 6px; }
+  input[type=text], textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--text);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+  }
+  input[type=text]:focus, textarea:focus { outline: none; border-color: var(--orange); }
+  textarea { min-height: 320px; resize: vertical; font-size: 1rem; }
+  .topic-row { margin-bottom: 12px; }
+  .hint { color: var(--muted); font-size: .88rem; margin-top: 4px; }
+
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+  .btn {
+    font: inherit; font-weight: 700;
+    border: none; border-radius: 10px;
+    padding: 12px 28px;
+    cursor: pointer;
+  }
+  .btn-main { background: var(--orange); color: #fff; font-size: 1.05rem; }
+  .btn-main:hover { filter: brightness(.94); }
+  .btn-light { background: #fff; color: var(--orange); border: 2px solid var(--orange); padding: 10px 20px; }
+  .live-count { margin-left: auto; color: var(--muted); font-size: .95rem; }
+
+  /* ===== Nəticə ===== */
+  #result { display: none; }
+  .summary { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+  .circle-wrap { position: relative; width: 150px; height: 150px; flex: 0 0 150px; margin: 0 auto; }
+  .circle-wrap svg { transform: rotate(-90deg); }
+  .circle-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .circle-text b { font-size: 2rem; line-height: 1; }
+  .circle-text span { color: var(--muted); font-size: .9rem; }
+  .summary-info { flex: 1 1 260px; }
+  .summary-info .stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .chip {
+    background: var(--orange-bg); border: 1px solid var(--line);
+    border-radius: 20px; padding: 3px 12px; font-size: .9rem;
+  }
+  .final-msg { font-weight: 700; margin: 6px 0; }
+  .final-msg.good { color: var(--green); }
+  .note { color: var(--blue); font-size: .93rem; margin: 6px 0 0; }
+
+  .alert {
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600;
+  }
+  .alert.red  { background: #FBEAEA; color: var(--red); border: 1px solid #F1C2C2; }
+  .alert.blue { background: #EAF1FC; color: var(--blue); border: 1px solid #C6D7F4; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card {
+    background: #fff; border: 1px solid var(--line); border-top: 5px solid var(--orange);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .card.full { border-top-color: var(--green); }
+  .card.zero { border-top-color: var(--red); }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-head h3 { margin: 0; font-size: 1rem; }
+  .badge {
+    flex: 0 0 auto; font-weight: 800; border-radius: 8px; padding: 2px 10px; color: #fff;
+    background: var(--orange);
+  }
+  .card.full .badge { background: var(--green); }
+  .card.zero .badge { background: var(--red); }
+  .card ul { list-style: none; padding: 0; margin: 10px 0 0; }
+  .card li { padding: 3px 0 3px 24px; position: relative; font-size: .93rem; }
+  .card li::before { position: absolute; left: 0; font-weight: 800; }
+  li.ok::before   { content: "✓"; color: var(--green); }
+  li.bad::before  { content: "✗"; color: var(--red); }
+  li.info::before { content: "i"; color: var(--blue); left: 5px; }
+  li.info { color: var(--blue); }
+
+  .errors { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .err { font-size: .9rem; margin: 4px 0; }
+  .code {
+    display: inline-block; min-width: 40px; text-align: center;
+    background: var(--red); color: #fff; font-weight: 800; font-size: .78rem;
+    border-radius: 6px; padding: 1px 6px; margin-right: 6px;
+  }
+  .code.info { background: var(--blue); }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .9rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { background: var(--orange-bg); }
+
+  .checklist label { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; cursor: pointer; }
+  .checklist input { accent-color: var(--green); width: 18px; height: 18px; margin-top: 3px; flex: 0 0 auto; }
+
+  .legend { font-size: .9rem; }
+  .legend div { margin: 4px 0; }
+
+  footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 16px 24px; }
+
+  /* ===== Telefon ===== */
+  @media (max-width: 560px) {
+    header h1 { font-size: 1.4rem; }
+    main { padding: 14px 10px 36px; }
+    .panel { padding: 14px; }
+    textarea { min-height: 260px; }
+    .btn-main { width: 100%; }
+    .live-count { margin-left: 0; width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WINSON ACADEMY</h1>
+  <p>Esse yoxlama aləti</p>
+</header>
+
+<main>
+  <!-- ===== Daxiletmə hissəsi ===== -->
+  <section class="panel">
+    <div class="modes" id="modes">
+      <label class="active"><input type="radio" name="mode" value="single" checked> Tək paraqraf (DIM 11-ci sinif)</label>
+      <label><input type="radio" name="mode" value="essay"> Esse (3 paraqraf)</label>
+    </div>
+
+    <div class="topic-row">
+      <label class="field-label" for="topic">Mövzu (istəyə bağlı)</label>
+      <input type="text" id="topic" placeholder="Məs.: Should students wear school uniforms?">
+      <div class="hint">Mövzu yazılsa, mətnin mövzuya aid sözlər işlədib-işlətmədiyi sadə şəkildə yoxlanılır.</div>
+    </div>
+
+    <label class="field-label" for="essay">Mətn (ingilis dilində)</label>
+    <textarea id="essay" placeholder="Mətni bura yazın və ya yapışdırın..."></textarea>
+
+    <div class="actions">
+      <button class="btn btn-main" id="checkBtn">Yoxla</button>
+      <button class="btn btn-light" id="clearBtn">Təmizlə</button>
+      <span class="live-count" id="liveCount">0 söz</span>
+    </div>
+  </section>
+
+  <!-- ===== Nəticə hissəsi ===== -->
+  <section id="result"></section>
+</main>
+
+<footer>Bütün yoxlama brauzerdə aparılır. Heç bir məlumat serverə göndərilmir.</footer>
+
+<script>
+/* ==========================================================
+   1. SÖZ SİYAHILARI (istəsəniz buradan dəyişə bilərsiniz)
+   ========================================================== */
+
+// Əks fikir göstəriciləri
+const COUNTER_MARKERS = ["some people", "however", "although", "on the other hand",
+  "others believe", "others argue", "opponents", "even though", "despite", "nevertheless"];
+
+// Şəxsi fikir göstəriciləri
+const OPINION_MARKERS = ["i believe", "in my opinion", "i think", "in my view",
+  "personally", "from my point of view", "i strongly believe", "i agree", "i disagree"];
+
+// Yekun ifadələri (son cümlə bunlardan biri ilə başlamalıdır)
+const CONCLUSION_MARKERS = ["in conclusion", "to sum up", "overall", "to conclude",
+  "in summary", "all in all", "to summarize"];
+
+// Nümunə və səbəb göstəriciləri
+const EXAMPLE_MARKERS = ["for example", "for instance", "such as", "because", "since"];
+
+// Bağlayıcı sözlər
+const LINKERS = ["also", "firstly", "secondly", "finally", "moreover", "in addition",
+  "however", "although", "on the other hand", "therefore", "furthermore", "as a result"];
+
+// Lehinə fikir göstəriciləri
+const PRO_MARKERS = OPINION_MARKERS.concat(["advantage", "advantages", "benefit", "benefits",
+  "positive", "useful", "helpful", "important"]);
+
+// Əleyhinə fikir göstəriciləri
+const CON_MARKERS = COUNTER_MARKERS.concat(["disadvantage", "disadvantages", "drawback",
+  "drawbacks", "negative", "harmful"]);
+
+// Mürəkkəb cümlə göstəriciləri
+const COMPLEX_MARKERS = ["because", "although", "which", "that", "when", "if", "while", "since"];
+
+// Funksional sözlər (D meyarında çıxarılır).
+// İlk sətir tapşırıqdakı siyahıdır, ikinci sətir əlavə ümumi sözlərdir.
+const FUNCTION_WORDS = new Set([
+  "the","a","an","is","are","of","to","and","in","it","this","that","i","they",
+  "be","was","were","for","on","with","as","at","by","or","but","so","not","can","will",
+  "we","you","he","she","my","our","their","its","them","me","us","do","does","have","has",
+  "there","these","those","which","who","if","because","also","very"
+]);
+
+// İngilis dilini tanımaq üçün ən çox işlənən sözlər
+const ENGLISH_COMMON = new Set(["the","a","an","is","are","of","to","and","in","it","this",
+  "that","i","they","for","on","with","be","have","not","can","people","we","you","my","their"]);
+
+/* ==========================================================
+   2. SAYMA FUNKSİYALARI
+   ========================================================== */
+
+// Mətndəki sözləri kiçik hərflə massiv kimi qaytarır
+function getWords(text) {
+  return text.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g) || [];
+}
+
+// Mətni cümlələrə bölür (. ! ? işarələrinə görə)
+function getSentences(text) {
+  return text.replace(/\s+/g, " ").trim()
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => getWords(s).length > 0);
+}
+
+// Mətni paraqraflara bölür (boş sətirə görə)
+function getParagraphs(text) {
+  return text.trim().split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+}
+
+// Mətndə siyahıdakı ifadələrdən hansılarının olduğunu tapır
+function findPhrases(text, list) {
+  const lower = " " + text.toLowerCase().replace(/[^a-z']+/g, " ") + " ";
+  return list.filter(p => lower.includes(" " + p + " "));
+}
+
+// Cümlə siyahıdakı ifadələrdən biri ilə başlayırmı?
+function startsWithAny(sentence, list) {
+  const s = getWords(sentence).join(" ");
+  return list.some(p => s === p || s.startsWith(p + " "));
+}
+
+// Cümlənin qısa hissəsini göstərmək üçün (ilk 8 söz)
+function snippet(sentence) {
+  const parts = sentence.split(/\s+/);
+  return parts.length > 8 ? parts.slice(0, 8).join(" ") + "…" : sentence;
+}
+
+// HTML üçün təhlükəsiz mətn
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ==========================================================
+   3. ÜMUMİ YOXLAMALAR (dil, mövzu)
+   ========================================================== */
+
+// Mətn ingilis dilindədirmi və oxunurmu?
+function checkLanguage(text, words) {
+  const letters = (text.match(/\p{L}/gu) || []).length;
+  const nonLatin = (text.match(/[^\x00-\x7F]/g) || []).filter(c => /\p{L}/u.test(c)).length;
+  if (words.length < 5) return { ok: false, reason: "Mətn çox qısadır və ya oxunmur." };
+  if (letters > 0 && nonLatin / letters > 0.05)
+    return { ok: false, reason: "Mətn ingilis dilində deyil (başqa dildə yazılıb)." };
+  const common = words.filter(w => ENGLISH_COMMON.has(w)).length;
+  if (common / words.length < 0.12)
+    return { ok: false, reason: "Mətn oxunmur və ya ingilis dilində deyil." };
+  return { ok: true };
+}
+
+// Mövzu sözləri mətndə varmı? (sadə yoxlama: sözün ilk 5 hərfi)
+function checkTopic(topic, words) {
+  const topicWords = getWords(topic).filter(w => !FUNCTION_WORDS.has(w) && w.length > 3);
+  if (topicWords.length === 0) return { checked: false, ok: true };
+  const stems = new Set(words.map(w => w.slice(0, 5)));
+  const found = topicWords.filter(w => stems.has(w.slice(0, 5)));
+  return { checked: true, ok: found.length > 0, found };
+}
+
+/* ==========================================================
+   4. STRUKTUR YOXLAMASI VƏ MEYARLAR
+   ========================================================== */
+
+// Dəstəkləyici cümlələri qaytarır (ən azı 6 sözlük orta cümlələr)
+function getSupportingSentences(text, mode) {
+  let middle;
+  if (mode === "essay") {
+    const paras = getParagraphs(text);
+    middle = paras.length >= 3 ? paras.slice(1, -1).flatMap(getSentences) : getSentences(text).slice(1, -1);
+  } else {
+    middle = getSentences(text).slice(1, -1);
+  }
+  return middle.filter(s => getWords(s).length >= 6);
+}
+
+// A – Tapşırığın yerinə yetirilməsi (0–1)
+function checkA(text, mode, words, sentences) {
+  const items = [], errors = [];
+  const wc = words.length;
+
+  // Söz sayı balı
+  let lenScore = 0;
+  if (wc >= 100) lenScore = 1;
+  else if (wc >= 70) { lenScore = 0.5; errors.push(["LEN", `Mətndə ${wc} söz var. Tam bal üçün ən azı 100 söz lazımdır.`]); }
+  else errors.push(["LEN", `Mətndə cəmi ${wc} söz var. 70-dən az söz 0 bal alır (tələb: 100+).`]);
+  items.push([wc >= 100, `Söz sayı: ${wc}`]);
+
+  // Struktur elementləri
+  const paras = getParagraphs(text);
+  const first = sentences[0] || "";
+  const last = sentences[sentences.length - 1] || "";
+  const support = getSupportingSentences(text, mode);
+  const checks = [];
+
+  if (mode === "essay") {
+    const hasParas = paras.length >= 3;
+    checks.push([hasParas, `Giriş, gövdə və nəticə paraqrafları (${paras.length} paraqraf tapıldı)`,
+      `Esse ən azı 3 paraqrafdan ibarət olmalıdır (giriş, gövdə, nəticə). İndi ${paras.length} paraqraf var.`]);
+  }
+
+  const topicOk = getWords(first).length >= 6 && !first.endsWith("?") && !startsWithAny(first, CONCLUSION_MARKERS);
+  checks.push([topicOk, "Əsas fikir cümləsi (topic sentence)",
+    `1-ci cümlə ("${snippet(first)}") əsas fikri aydın bildirmir (çox qısadır və ya sualdır).`]);
+
+  checks.push([support.length >= 2, `Dəstəkləyici cümlələr: ${support.length}`,
+    `Ən azı 2 dəstəkləyici cümlə lazımdır, ${support.length} tapıldı.`]);
+
+  const counter = findPhrases(text, COUNTER_MARKERS);
+  checks.push([counter.length > 0, "Əks fikir" + (counter.length ? ` ("${counter[0]}")` : ""),
+    `Əks fikir tapılmadı ("some people", "however", "although" kimi ifadə işlədin).`]);
+
+  const opinion = findPhrases(text, OPINION_MARKERS);
+  checks.push([opinion.length > 0, "Şəxsi fikir" + (opinion.length ? ` ("${opinion[0]}")` : ""),
+    `Şəxsi fikir tapılmadı ("I believe", "in my opinion" kimi ifadə işlədin).`]);
+
+  let conclOk;
+  if (mode === "essay" && paras.length >= 2) {
+    conclOk = getSentences(paras[paras.length - 1]).some(s => startsWithAny(s, CONCLUSION_MARKERS));
+  } else {
+    conclOk = startsWithAny(last, CONCLUSION_MARKERS);
+  }
+  checks.push([conclOk, "Yekun cümləsi",
+    mode === "essay"
+      ? `Nəticə paraqrafında yekun ifadəsi yoxdur ("In conclusion", "To sum up", "Overall").`
+      : `Son cümlə ("${snippet(last)}") yekun ifadəsi ilə başlamır ("In conclusion", "To sum up", "Overall").`]);
+
+  checks.forEach(([ok, label, err]) => { items.push([ok, label]); if (!ok) errors.push(["STR", err]); });
+
+  const found = checks.filter(c => c[0]).length;
+  const need05 = mode === "essay" ? 4 : 3;
+  const strScore = found === checks.length ? 1 : found >= need05 ? 0.5 : 0;
+
+  // Tək paraqraf rejimində boş sətir xəbərdarlığı
+  const warnings = [];
+  if (mode === "single" && paras.length > 1) {
+    warnings.push("Tək paraqraf tələb olunur.");
+    errors.push(["STR", `Tək paraqraf tələb olunur. Mətndə ${paras.length} abzas (boş sətir) var.`]);
+  }
+
+  // A balı: söz sayı və struktur balından kiçik olanı
+  const score = Math.min(lenScore, strScore);
+  items.push(["info", `Söz sayı balı: ${lenScore}, struktur balı: ${strScore} (${found}/${checks.length} element)`]);
+  return { score, max: 1, items, errors, warnings, support };
+}
+
+// B – Mövzunun əhatə edilməsi və məntiqi ardıcıllıq (0–2)
+function checkB(text, support) {
+  const items = [], errors = [];
+
+  const argsOk = support.length >= 2;
+  items.push([argsOk, `Aydın fikir/arqument: ${support.length}`]);
+
+  const examples = findPhrases(text, EXAMPLE_MARKERS);
+  const exOk = examples.length > 0;
+  items.push([exOk, "Nümunə/səbəb: " + (exOk ? examples.map(e => `"${e}"`).join(", ") : "tapılmadı")]);
+
+  const linkers = findPhrases(text, LINKERS);
+  const lnkOk = linkers.length >= 3;
+  items.push([lnkOk, `Fərqli bağlayıcı sayı: ${linkers.length}` + (linkers.length ? ` (${linkers.join(", ")})` : "")]);
+  if (!lnkOk) errors.push(["LNK", linkers.length
+    ? `Yalnız ${linkers.length} fərqli bağlayıcı işlənib: ${linkers.map(l => `"${l}"`).join(", ")}. Ən azı 3 fərqli bağlayıcı işlədin (moreover, therefore, in addition...).`
+    : `Bağlayıcı söz tapılmadı. "Firstly", "moreover", "however", "therefore" kimi sözlər işlədin.`]);
+
+  const pro = findPhrases(text, PRO_MARKERS).length > 0;
+  const con = findPhrases(text, CON_MARKERS).length > 0;
+  const bothOk = pro && con;
+  items.push([bothOk, "Həm lehinə, həm əleyhinə fikir" + (!bothOk ? (pro ? " (yalnız lehinə)" : con ? " (yalnız əleyhinə)" : "") : "")]);
+
+  const count = [argsOk, exOk, lnkOk, bothOk].filter(Boolean).length;
+  const score = count === 4 ? 2 : count >= 2 ? 1 : 0;
+  items.push(["info", "Mövzuya uyğunluq və arqumentlərin keyfiyyəti avtomatik tam yoxlanmır – aşağıdakı müəllim siyahısına baxın."]);
+  return { score, max: 2, items, errors };
+}
+
+// C – Qrammatik qaydalara əməl (0–1)
+function checkC(sentences) {
+  const items = [], errors = [];
+  if (sentences.length === 0) return { score: 0, max: 1, items: [[false, "Cümlə qurulmayıb"]], errors };
+
+  const complex = sentences.filter(s => findPhrases(s, COMPLEX_MARKERS).length > 0);
+  const markersUsed = new Set(sentences.flatMap(s => findPhrases(s, COMPLEX_MARKERS)));
+  items.push([complex.length >= 2, `Mürəkkəb cümlə sayı: ${complex.length} / ${sentences.length}`]);
+  items.push([markersUsed.size >= 2, `Fərqli mürəkkəb göstəricilər: ${markersUsed.size}` + (markersUsed.size ? ` (${[...markersUsed].join(", ")})` : "")]);
+
+  const lengths = sentences.map(s => getWords(s).length);
+  const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+  const shortIdx = lengths.map((l, i) => l < 8 ? i : -1).filter(i => i >= 0);
+  const mostlyShort = shortIdx.length / sentences.length > 0.5;
+  items.push([!mostlyShort, `Ortalama cümlə uzunluğu: ${avg.toFixed(1)} söz`]);
+
+  if (mostlyShort) {
+    shortIdx.slice(0, 5).forEach(i =>
+      errors.push(["SNT", `${i + 1}-ci cümlə ("${snippet(sentences[i])}") cəmi ${lengths[i]} sözdür – qısa/şablon cümlə.`]));
+    if (shortIdx.length > 5) errors.push(["SNT", `Daha ${shortIdx.length - 5} qısa cümlə var.`]);
+  }
+  // Çox uzun cümlələr (məlumat üçün)
+  lengths.forEach((l, i) => {
+    if (l > 40) errors.push(["SNT", `${i + 1}-ci cümlə ("${snippet(sentences[i])}") ${l} sözdür – çox uzundur, bölməyi düşünün.`, "info"]);
+  });
+
+  let score;
+  if (sentences.length < 2 && lengths[0] < 5) score = 0;
+  else if (complex.length >= 2 && markersUsed.size >= 2 && !mostlyShort) score = 1;
+  else score = 0.5;
+
+  items.push(["info", "Zaman, artikl və fel forması səhvləri avtomatik yoxlanmır – müəllim yoxlaması lazımdır."]);
+  return { score, max: 1, items, errors };
+}
+
+// D – Söz ehtiyatının müxtəlifliyi (0–1)
+function checkD(words) {
+  const items = [], errors = [];
+  const content = words.filter(w => !FUNCTION_WORDS.has(w) && w.length > 1);
+  if (content.length === 0) return { score: 0, max: 1, items: [[false, "Məzmun sözü tapılmadı"]], errors, repeated: [] };
+
+  // Hər sözün neçə dəfə işləndiyini say
+  const freq = {};
+  content.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  const unique = Object.keys(freq).length;
+  const ratio = unique / content.length;
+  const repeated = Object.entries(freq).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+
+  items.push([ratio >= 0.6, `Unikal söz nisbəti: ${ratio.toFixed(2)} (${unique} / ${content.length})`]);
+  items.push([repeated.length <= 2, `3+ dəfə təkrarlanan sözlər: ${repeated.length}`]);
+  repeated.forEach(([w, n]) => errors.push(["WW", `"${w}" sözü ${n} dəfə işlənib. Sinonim işlədin.`]));
+
+  let score;
+  if (ratio >= 0.6 && repeated.length <= 2) score = 1;
+  else if (ratio >= 0.45 && repeated.length <= 4) score = 0.5;
+  else score = 0;
+  return { score, max: 1, items, errors, repeated };
+}
+
+/* ==========================================================
+   5. BAL HESABLANMASI
+   ========================================================== */
+function analyze(text, mode, topic) {
+  const words = getWords(text);
+  const sentences = getSentences(text);
+  const res = { words, sentences, alerts: [] };
+
+  const A = checkA(text, mode, words, sentences);
+  const B = checkB(text, A.support);
+  const C = checkC(sentences);
+  const D = checkD(words);
+  res.crit = { A, B, C, D };
+  A.warnings.forEach(w => res.alerts.push(["red", w]));
+
+  // Qayda: başqa dildə yazılmış və ya oxunmayan mətn 0 bal alır
+  const lang = checkLanguage(text, words);
+  // Qayda: mövzudan kənar mətn 0 bal alır
+  const top = checkTopic(topic, words);
+
+  let zeroAll = null;
+  if (!lang.ok) zeroAll = lang.reason + " Belə mətn 0 bal alır.";
+  else if (top.checked && !top.ok) zeroAll = "Mətndə mövzuya aid söz tapılmadı – mövzudan kənar ola bilər. Belə mətn 0 bal alır (müəllim təsdiqləməlidir).";
+  else if (top.checked) res.alerts.push(["blue", `Mövzu sözləri tapıldı: ${top.found.join(", ")}`]);
+
+  if (zeroAll) {
+    res.alerts.unshift(["red", zeroAll]);
+    Object.values(res.crit).forEach(c => c.score = 0);
+  } else if (B.score === 0) {
+    // Qayda: B balı 0-dırsa, C və D də 0
+    C.score = 0; D.score = 0;
+    res.alerts.push(["red", "B meyarı 0 bal olduğu üçün C və D meyarları da 0 bal hesab olunur."]);
+  }
+
+  res.total = A.score + B.score + C.score + D.score;
+  return res;
+}
+
+/* ==========================================================
+   6. GÖSTƏRMƏ (nəticəni ekrana çıxarmaq)
+   ========================================================== */
+const CRIT_TITLES = {
+  A: "A – Tapşırığın yerinə yetirilməsi",
+  B: "B – Mövzunun əhatəsi və məntiqi ardıcıllıq",
+  C: "C – Qrammatik qaydalara əməl",
+  D: "D – Söz ehtiyatının müxtəlifliyi"
+};
+
+const CODE_INFO = {
+  LEN: "Söz sayı tələbə uyğun deyil.",
+  STR: "Struktur elementi çatışmır.",
+  LNK: "Bağlayıcı sözlər azdır.",
+  WW:  "Eyni söz çox təkrarlanır.",
+  SNT: "Cümlə uzunluğu ilə bağlı problem."
+};
+
+// Bal dairəsi (SVG)
+function renderCircle(total) {
+  const r = 62, c = 2 * Math.PI * r;
+  const part = c * (total / 5);
+  const color = total >= 4 ? "var(--green)" : total >= 2 ? "var(--orange)" : "var(--red)";
+  return `
+    <div class="circle-wrap">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="${r}" fill="none" stroke="#F6D9C4" stroke-width="12"/>
+        <circle cx="75" cy="75" r="${r}" fill="none" stroke="${color}" stroke-width="12"
+          stroke-linecap="round" stroke-dasharray="${part} ${c}"/>
+      </svg>
+      <div class="circle-text"><b>${total}</b><span>/ 5 bal</span></div>
+    </div>`;
+}
+
+// Bir meyar kartı
+function renderCard(key, c) {
+  const cls = c.score === c.max ? "full" : c.score === 0 ? "zero" : "";
+  const list = c.items.map(([ok, label]) =>
+    `<li class="${ok === "info" ? "info" : ok ? "ok" : "bad"}">${esc(label)}</li>`).join("");
+  // WW səhvləri D kartında cədvəl şəklində göstərilir, digərləri siyahı şəklində
+  const listErrors = c.errors.filter(e => e[0] !== "WW");
+  const errs = listErrors.length
+    ? `<div class="errors">${listErrors.map(([code, msg, type]) =>
+        `<div class="err"><span class="code ${type === "info" ? "info" : ""}">${code}</span>${esc(msg)}</div>`).join("")}</div>`
+    : "";
+  let table = "";
+  if (key === "D" && c.repeated && c.repeated.length) {
+    table = `<table><tr><th>Kod</th><th>Söz</th><th>Sayı</th><th>İzah</th></tr>
+      ${c.repeated.map(([w, n]) => `<tr><td><span class="code">WW</span></td><td>${esc(w)}</td><td>${n}</td>
+        <td>"${esc(w)}" sözü ${n} dəfə işlənib.</td></tr>`).join("")}</table>`;
+  }
+  return `
+    <div class="card ${cls}">
+      <div class="card-head"><h3>${CRIT_TITLES[key]}</h3><span class="badge">${c.score} / ${c.max}</span></div>
+      <ul>${list}</ul>${table}${errs}
+    </div>`;
+}
+
+// Müəllim yoxlaması siyahısı
+function renderChecklist() {
+  const qs = [
+    "Esse mövzuya uyğundurmu?",
+    "Arqumentlər inandırıcıdırmı, nümunələr real və uyğundurmu?",
+    "Qrammatik səhvlər (zaman, artikl, fel forması) varmı?",
+    "Söz birləşmələri (collocations) təbiidirmi?"
+  ];
+  return `
+    <div class="panel checklist">
+      <h2>Müəllim yoxlaması</h2>
+      ${qs.map(q => `<label><input type="checkbox"> <span>${q}</span></label>`).join("")}
+      <p class="note">Qeyd: eyni qrammatik qaydanın təkrarlanan səhvləri bir səhv hesab olunur.</p>
+    </div>`;
+}
+
+// Kodların izahı
+function renderLegend() {
+  return `
+    <div class="panel legend">
+      <h2>Səhv kodları</h2>
+      ${Object.entries(CODE_INFO).map(([k, v]) => `<div><span class="code">${k}</span>${v}</div>`).join("")}
+    </div>`;
+}
+
+// Bütün nəticəni göstər
+function renderResult(res) {
+  const { A, B, C, D } = res.crit;
+  const allFull = res.total === 5;
+  const alerts = res.alerts.map(([cls, msg]) => `<div class="alert ${cls}">${esc(msg)}</div>`).join("");
+
+  const html = `
+    <div class="panel">
+      ${alerts}
+      <div class="summary">
+        ${renderCircle(res.total)}
+        <div class="summary-info">
+          <h2>Ümumi bal: ${res.total} / 5</h2>
+          <div class="stats">
+            <span class="chip">${res.words.length} söz</span>
+            <span class="chip">${res.sentences.length} cümlə</span>
+            <span class="chip">A: ${A.score}</span><span class="chip">B: ${B.score}</span>
+            <span class="chip">C: ${C.score}</span><span class="chip">D: ${D.score}</span>
+          </div>
+          ${allFull ? `<p class="final-msg good">Yaxşı iş! Bütün meyarlar ödənilib.</p>` : ""}
+          <p class="note">Bu təxmini bala əsaslanır. Mövzu, arqument və qrammatik səhvlər müəllim tərəfindən yoxlanmalıdır.</p>
+        </div>
+      </div>
+    </div>
+    <div class="cards">
+      ${renderCard("A", A)}${renderCard("B", B)}${renderCard("C", C)}${renderCard("D", D)}
+    </div>
+    <div style="height:18px"></div>
+    ${renderChecklist()}
+    ${renderLegend()}`;
+
+  const box = document.getElementById("result");
+  box.innerHTML = html;
+  box.style.display = "block";
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ==========================================================
+   7. HADİSƏLƏR (düymələr, rejim seçimi)
+   ========================================================== */
+const essayEl = document.getElementById("essay");
+
+function currentMode() {
+  return document.querySelector('input[name="mode"]:checked').value;
+}
+
+// Rejim seçiləndə aktiv kartı vurğula
+document.querySelectorAll('input[name="mode"]').forEach(r => {
+  r.addEventListener("change", () => {
+    document.querySelectorAll("#modes label").forEach(l =>
+      l.classList.toggle("active", l.querySelector("input").checked));
+  });
+});
+
+// Canlı söz sayı
+essayEl.addEventListener("input", () => {
+  document.getElementById("liveCount").textContent = getWords(essayEl.value).length + " söz";
+});
+
+document.getElementById("checkBtn").addEventListener("click", () => {
+  const text = essayEl.value;
+  if (!text.trim()) { essayEl.focus(); return; }
+  renderResult(analyze(text, currentMode(), document.getElementById("topic").value));
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  essayEl.value = "";
+  document.getElementById("liveCount").textContent = "0 söz";
+  document.getElementById("result").style.display = "none";
+});
+</script>
+</body>
+</html>
