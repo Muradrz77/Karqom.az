@@ -27,13 +27,19 @@
 
   /* ===== Başlıq ===== */
   header {
-    background: var(--orange);
-    color: #fff;
+    background: #fff;
     text-align: center;
-    padding: 22px 16px 18px;
+    padding: 18px 16px 14px;
+    border-bottom: 6px solid var(--orange);
   }
-  header h1 { margin: 0; font-size: 1.8rem; letter-spacing: .14em; font-weight: 800; }
-  header p  { margin: 4px 0 0; font-size: 1.05rem; opacity: .95; }
+  header .logo { display: block; margin: 0 auto; height: 110px; width: auto; }
+  header p { margin: 8px 0 0; font-size: 1.1rem; font-weight: 700; color: var(--orange); }
+
+  /* ===== Müəllimin izahı ===== */
+  .teacher { border-left: 6px solid var(--orange); }
+  .teacher p { margin: 0 0 10px; line-height: 1.65; }
+  .teacher p:last-child { margin-bottom: 0; }
+  .teacher b { color: var(--orange); }
 
   main { max-width: 920px; margin: 0 auto; padding: 20px 16px 48px; }
 
@@ -154,7 +160,7 @@
 
   /* ===== Telefon ===== */
   @media (max-width: 560px) {
-    header h1 { font-size: 1.4rem; }
+    header .logo { height: 86px; }
     main { padding: 14px 10px 36px; }
     .panel { padding: 14px; }
     textarea { min-height: 260px; }
@@ -166,7 +172,7 @@
 <body>
 
 <header>
-  <h1>WINSON ACADEMY</h1>
+  <img class="logo" src="data:image/png;base64,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" alt="WINSON ACADEMY">
   <p>Esse yoxlama aləti</p>
 </header>
 
@@ -558,7 +564,7 @@ function checkD(words) {
 function analyze(text, topic) {
   const words = getWords(text);
   const sentences = getSentences(text);
-  const res = { words, sentences, alerts: [] };
+  const res = { text, topic, words, sentences, alerts: [] };
   forgiveLeft = FORGIVE_LIMIT; // hər yoxlamada limit yenidən başlayır
 
   const A = checkA(text, words, sentences);
@@ -580,10 +586,12 @@ function analyze(text, topic) {
 
   if (zeroAll) {
     res.alerts.unshift(["red", zeroAll]);
+    res.zeroReason = zeroAll;
     Object.values(res.crit).forEach(c => c.score = 0);
   } else if (A.score === 0) {
     // Qayda: A balı 0-dırsa, yekun qiymət 0-dır, B, C, D qiymətləndirilmir
     B.score = 0; C.score = 0; D.score = 0;
+    res.aZero = true;
     res.alerts.push(["red", "A meyarı 0 bal olduğu üçün yekun qiymət 0-dır. B, C və D meyarları qiymətləndirilmir."]);
   } else if (B.score === 0) {
     // Qayda: B balı 0-dırsa, C və D də 0
@@ -681,6 +689,214 @@ function renderLegend() {
     </div>`;
 }
 
+/* ==========================================================
+   6b. MÜƏLLİMİN İZAHI (şagirdə təbii dildə rəy)
+   ========================================================== */
+
+// Tez-tez təkrarlanan sözlər üçün sinonimlər (kitabdakı parafraz nümunələri əsasında)
+const SYNONYMS = {
+  important: ["essential", "crucial", "significant"],
+  good: ["beneficial", "useful", "positive"],
+  bad: ["harmful", "negative"],
+  many: ["a large number of", "numerous"],
+  very: ["highly", "extremely"],
+  difficult: ["challenging"],
+  help: ["support", "assist"],
+  helps: ["supports", "allows"],
+  big: ["significant", "major"],
+  people: ["individuals", "society"],
+  think: ["believe", "consider"],
+  students: ["learners", "pupils"],
+  children: ["young people", "kids"],
+  teenagers: ["adolescents", "young people"],
+  phones: ["smartphones", "mobile devices"],
+  learn: ["master", "acquire"],
+  problem: ["issue", "challenge"],
+  problems: ["issues", "challenges"],
+  useful: ["beneficial", "helpful"],
+  show: ["demonstrate"],
+  make: ["create"],
+  get: ["receive", "obtain"],
+  use: ["make use of", "rely on"],
+  like: ["enjoy", "prefer"],
+  nice: ["pleasant"],
+  fun: ["enjoyable", "entertaining"]
+};
+
+// Bağlayıcı qrupları (kitabdakı bölgüyə görə)
+const LINKER_GROUPS = [
+  { name: "əlavə fikir", list: ["also", "in addition", "moreover", "furthermore"], ex: "In addition, ..." },
+  { name: "ardıcıllıq", list: ["first", "firstly", "second", "secondly", "next", "then", "finally"], ex: "Firstly, ... Secondly, ..." },
+  { name: "nəticə", list: ["therefore", "as a result", "consequently"], ex: "As a result, ..." },
+  { name: "əks fikir", list: ["however", "although", "while", "but", "even though", "on the other hand"], ex: "However, ..." }
+];
+
+// Cümləni dırnaq içində qısa göstərir
+function quote(s) { return `"${esc(snippet(s))}"`; }
+
+// Müəllimin şagirdə yazdığı kimi izah: hər bölmə üçün nə yaxşıdır, nə düzəldilməlidir
+function teacherFeedback(res) {
+  const text = res.text, words = res.words, sentences = res.sentences;
+  const out = [];
+  if (res.zeroReason) {
+    out.push(`Bu dəfə bal verə bilmədim. ${esc(res.zeroReason)} Mətni ingilis dilində və verilən mövzuya uyğun yaz, sonra yenidən yoxla.`);
+    return out;
+  }
+
+  const good = [], next = [];
+  const structure = [], content = [], grammar = [], vocab = [];
+  const first = sentences[0] || "", last = sentences[sentences.length - 1] || "";
+  const support = getSupportingSentences(sentences);
+  const wc = words.length;
+
+  // --- Quruluş (A) ---
+  if (wc < 70) {
+    structure.push(`Mətnin cəmi ${wc} sözdür. İmtahanda ən azı 100 söz tələb olunur, 70 sözdən az olanda isə yazı ümumiyyətlə qiymətləndirilmir. Fikirlərini genişləndir: hər səbəbdən sonra özünə "Why?" və "How?" sualını ver və cavabını bir cümlə ilə yaz.`);
+    next.push("mətni ən azı 100 sözə çatdırmaq");
+  } else if (wc < 100) {
+    structure.push(`Mətnin ${wc} sözdür, tam bal üçün isə ən azı 100 söz lazımdır. Daha ${100 - wc} söz qazanmaq üçün bir fikrini izah et ("This means that ...") və ya konkret nümunə ver.`);
+    next.push("100 söz həddinə çatmaq");
+  } else good.push("söz sayı tələbə uyğundur");
+
+  const paras = getParagraphs(text);
+  if (paras.length > 1)
+    structure.push(`Mətni ${paras.length} abzasa bölmüsən. Bu tapşırıqda bütün cümlələr bir paraqrafda, ard-arda gəlməlidir.`);
+
+  if (ANNOUNCEMENT_RE.test(first)) {
+    structure.push(`Birinci cümlən (${quote(first)}) nə haqqında yazacağını elan edir. Sən məruzəçi deyilsən: elan etmək əvəzinə əsas fikrini birbaşa yaz. Məsələn: "Smoking is a dangerous habit because it causes serious health problems."`);
+    next.push("topic sentence-i elan kimi yox, əsas fikir kimi yazmaq");
+  } else if (getWords(first).length < 6 || first.endsWith("?")) {
+    structure.push(`Birinci cümlən (${quote(first)}) əsas fikri aydın göstərmir. Yaxşı topic sentence iki suala cavab verir: mövzu nədir və sənin bu mövzu haqqında fikrin nədir? Cümləyə səbəbini də əlavə et: "... because ...".`);
+    next.push("güclü topic sentence yazmaq");
+  } else good.push("birinci cümlən əsas fikri aydın bildirir");
+
+  if (support.length < 2) {
+    structure.push(`Dəstəkləyici fikirlərin azdır (${support.length}). Ən azı iki səbəb göstər və onları "Firstly, ..." və "Secondly, ..." ilə başla ki, oxucu fikirlərini asan izləsin.`);
+    next.push("ən azı iki dəstəkləyici fikir yazmaq");
+  } else good.push(`${support.length} dəstəkləyici cümlə ilə fikrini inkişaf etdirmisən`);
+
+  if (!startsWithAny(last, CONCLUSION_MARKERS)) {
+    structure.push(`Son cümlən (${quote(last)}) yekun kimi başlamır. Paraqrafı "In conclusion, ...", "To sum up, ..." və ya "Overall, ..." ilə bitir və birinci cümlədəki fikri başqa sözlərlə təkrarla. Yadda saxla: yekunda yeni fikir yazmaq olmaz.`);
+    next.push("yekun cümləni düzgün yazmaq");
+  } else {
+    // Yekun birinci cümləni sözbəsöz təkrarlayırmı?
+    const a = new Set(getWords(first).filter(w => !FUNCTION_WORDS.has(w) && w.length > 3));
+    const b = new Set(getWords(last).filter(w => !FUNCTION_WORDS.has(w) && w.length > 3));
+    const shared = [...a].filter(w => b.has(w)).length;
+    if (a.size >= 4 && shared / a.size > 0.7)
+      structure.push(`Yekun cümlən birinci cümləni demək olar ki, eyni sözlərlə təkrarlayır. Yoxlayıcı bunu sözbəsöz təkrar kimi görür. Sinonimlərdən istifadə et və cümlənin quruluşunu dəyiş, yəni parafraz et.`);
+    else good.push("yekun cümlən əsas fikri yenidən xatırladır");
+  }
+
+  const tpl = TEMPLATE_PHRASES.filter(p => text.toLowerCase().includes(p));
+  if (tpl.length)
+    structure.push(`"${esc(tpl[0])}" kimi hazır şablonlardan qaç: yoxlayıcı onları tez tanıyır. Eyni fikri mövzuya uyğun öz cümlənlə yaz.`);
+
+  // --- Məzmun və bağlayıcılar (B) ---
+  const examples = findPhrases(text, ["for example", "for instance", "such as"]);
+  if (!examples.length) {
+    content.push(`Fikirlərini nümunə ilə göstərməmisən. "Idea → Explain → Example" modelini yada sal: fikri de, onu izah et ("This is because ..."), sonra "For example, ..." ilə real həyatdan konkret misal gətir.`);
+    next.push("ən azı bir konkret nümunə vermək");
+  } else good.push(`fikrini nümunə ilə göstərmisən ("${examples[0]}")`);
+
+  if (!findPhrases(text, ["because", "since", "due to", "because of"]).length)
+    content.push(`Səbəb bildirən sözlər yoxdur. Fikrini əsaslandırmaq üçün "because", "since" və ya "This is because ..." işlət.`);
+
+  const linkers = findPhrases(text, LINKERS);
+  if (linkers.length < 3) {
+    const missing = LINKER_GROUPS.filter(g => !g.list.some(l => linkers.includes(l)));
+    content.push(`Bağlayıcı sözlərin azdır (${linkers.length ? "yalnız " + linkers.map(l => `"${l}"`).join(", ") : "heç biri yoxdur"}). ` +
+      (missing.length ? `Məsələn, ${missing.slice(0, 3).map(g => `${g.name} üçün "${g.ex}"`).join(", ")} işlədə bilərsən. ` : "") +
+      `Amma hər cümləyə bağlayıcı qoymaq lazım deyil: onlar bəzək üçün yox, fikirləri əlaqələndirmək üçündür.`);
+    next.push("daha çox fərqli bağlayıcı işlətmək");
+  } else good.push("bağlayıcılardan yerində istifadə etmisən");
+
+  const opposing = findPhrases(text, ["some people", "others believe", "others argue", "opponents", "on the other hand", "however"]).length > 0;
+  const response = findPhrases(text, ["although", "even though", "despite", "nevertheless"]).length > 0;
+  if (!opposing) {
+    content.push(`Əks fikri yazmamısan. İmtahanda obyektivlik vacibdir: "However, some people argue that ..." ilə qarşı tərəfin fikrini yaz, sonra "Although this might be true, ..." ilə cavab ver və öz mövqeyinə qayıt.`);
+    next.push("əks fikir və ona cavab yazmaq");
+  } else if (!response) {
+    content.push(`Əks fikri yazmısan, amma ona cavab verməmisən. Ardınca "Although this might be true, ..." və ya "Despite this, ..." ilə cavab ver və öz fikrinə qayıt.`);
+  } else good.push("əks fikri yazıb ona cavab vermisən");
+
+  const opinion = findPhrases(text, OPINION_MARKERS);
+  if (!opinion.length)
+    content.push(`Öz mövqeyini açıq bildirməmisən. "I believe that ..." və ya "In my opinion, ..." ilə bir dəfə fikrini de, bu kifayətdir.`);
+  else if (opinion.length >= 3)
+    content.push(`"I think", "I believe", "In my opinion" kimi ifadələri bir neçə dəfə işlətmisən. Fikrini bildirmək üçün bir dəfə demək kifayətdir.`);
+
+  // --- Cümlələr (C) ---
+  const lengths = sentences.map(s => getWords(s).length);
+  const shortIdx = lengths.map((l, i) => l < 8 ? i : -1).filter(i => i >= 0);
+  const complex = sentences.filter(s => findPhrases(s, COMPLEX_MARKERS).length > 0).length;
+  const mostlyShort = sentences.length > 0 && shortIdx.length / sentences.length > 0.5;
+  if (mostlyShort) {
+    grammar.push(`Cümlələrinin çoxu qısadır (${shortIdx.length} cümlə 8 sözdən azdır), məsələn: ${quote(sentences[shortIdx[0]])}. Belə cümlələri "because", "which", "although", "when" ilə birləşdir. Məsələn: "Online learning is convenient because students can study from home."`);
+    next.push("qısa cümlələri birləşdirmək");
+  }
+  if (complex < 2)
+    grammar.push(`Mürəkkəb cümlələrin azdır (${complex}). Paraqrafda ən azı 2-3 belə cümlə olsun: "... because ...", "... which ...", "Although ..., ...".`);
+  else if (!mostlyShort) good.push("sadə və mürəkkəb cümlələri qarışıq işlətmisən");
+  lengths.forEach((l, i) => {
+    if (l > 40) grammar.push(`${i + 1}-ci cümlə çox uzundur (${l} söz). Oxucu fikri itirə bilər, onu iki cümləyə böl.`);
+  });
+  grammar.push(`Zaman, artikl və fel forması səhvlərini mən avtomatik yoxlaya bilmirəm, onları müəllimin ayrıca yoxlayacaq.`);
+
+  // --- Söz ehtiyatı (D) ---
+  const freq = {};
+  words.filter(w => !FUNCTION_WORDS.has(w) && w.length > 1).forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  const repeated = Object.entries(freq).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  const topicW = getWords(res.topic || "");
+  if (repeated.length) {
+    const parts = repeated.slice(0, 4).map(([w, n]) => {
+      const syn = SYNONYMS[w];
+      const isTopic = topicW.some(t => t.slice(0, 5) === w.slice(0, 5));
+      return `"${esc(w)}" (${n} dəfə)` +
+        (syn ? ` – əvəzinə "${syn.join('", "')}" yaza bilərsən` : isTopic ? ` – mövzu sözüdür, amma bəzən "it/they" ilə əvəz et` : "");
+    });
+    vocab.push(`Bəzi sözləri çox təkrarlamısan: ${parts.join("; ")}. Parafraz et: sinonim işlət, sözün formasını dəyiş (məsələn "improve" → "improvement") və ya "it/they" kimi əvəzliklərdən istifadə et.`);
+    next.push("təkrarlanan sözləri sinonimlərlə əvəz etmək");
+  } else good.push("sözləri az təkrarlamısan");
+
+  const topicHits = Object.keys(freq).filter(w => TOPIC_WORDS.has(w)).length;
+  if (topicHits < 4)
+    vocab.push(`Mövzuya uyğun güclü sözlər azdır. Kitabın lüğət bölməsindən "beneficial", "essential", "opportunity", "impact" kimi sözləri yerində işlətməyə çalış.`);
+  else good.push("mövzuya uyğun sözlər işlətmisən");
+
+  // --- Rəyi bir yerə yığ ---
+  const t = res.total;
+  let opening;
+  if (t === 5) opening = next.length
+    ? "Əla iş görmüsən! Bütün meyarlar ödənilib. Aşağıda yenə bir neçə kiçik tövsiyə yazıram ki, növbəti yazın daha da güclü olsun."
+    : "Əla iş görmüsən! Paraqrafın quruluşu da, fikirlərin ardıcıllığı da yerindədir.";
+  else if (t >= 3.5) opening = "Yaxşı işdir, tələblərin çoxunu yerinə yetirmisən. Gəl birlikdə baxaq, hansı məqamları düzəltsən tam bala yaxınlaşarsan.";
+  else if (t >= 2) opening = "Yaxşı başlanğıcdır, amma paraqrafda bir neçə vacib hissə çatışmır. Narahat olma, gəl addım-addım baxaq.";
+  else opening = "Bu dəfə bal aşağı alındı, amma bunların hamısı düzəldilə bilən şeylərdir. Gəl paraqrafı birlikdə hissə-hissə təhlil edək.";
+
+  out.push(opening);
+  if (res.aZero) out.push(`<b>Diqqət:</b> A meyarı 0 bal olduğu üçün imtahanda yekun bal 0 olur. Aşağıdakı ilk qeydləri mütləq düzəlt.`);
+  if (good.length) out.push(`<b>Yaxşı alınanlar:</b> ${good.join(", ")}.`);
+  if (structure.length) out.push(`<b>Quruluş.</b> ${structure.join(" ")}`);
+  if (content.length) out.push(`<b>Məzmun və bağlayıcılar.</b> ${content.join(" ")}`);
+  if (grammar.length) out.push(`<b>Cümlələr.</b> ${grammar.join(" ")}`);
+  if (vocab.length) out.push(`<b>Söz ehtiyatı.</b> ${vocab.join(" ")}`);
+  if (res.forgiven) out.push(`Bu dəfə ${res.forgiven} kiçik səhvə görə bal çıxmadım, amma onları da düzəltsən yazın daha güclü olacaq.`);
+  out.push(next.length
+    ? `<b>Növbəti yazında ilk növbədə:</b> ${next.slice(0, 3).map((s, i) => `${i + 1}) ${s}`).join("; ")}. Uğurlar!`
+    : "Belə davam et. Uğurlar!");
+  return out;
+}
+
+// Müəllimin izahı paneli
+function renderTeacher(res) {
+  return `
+    <div class="panel teacher">
+      <h2>Müəllimin izahı</h2>
+      ${teacherFeedback(res).map(p => `<p>${p}</p>`).join("")}
+    </div>`;
+}
+
 // Bütün nəticəni göstər
 function renderResult(res) {
   const { A, B, C, D } = res.crit;
@@ -710,6 +926,7 @@ function renderResult(res) {
       ${renderCard("A", A)}${renderCard("B", B)}${renderCard("C", C)}${renderCard("D", D)}
     </div>
     <div style="height:18px"></div>
+    ${renderTeacher(res)}
     ${renderChecklist()}
     ${renderLegend()}`;
 
