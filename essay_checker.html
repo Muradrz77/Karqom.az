@@ -47,19 +47,10 @@
   }
   .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
 
-  /* ===== Rejim seçimi ===== */
-  .modes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-  .modes label {
-    flex: 1 1 240px;
-    display: flex; align-items: center; gap: 8px;
-    border: 2px solid var(--line);
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-weight: 600;
-    cursor: pointer;
+  .mode-line {
+    display: inline-block; background: var(--orange-bg); border: 2px solid var(--orange);
+    border-radius: 10px; padding: 8px 12px; font-weight: 700; margin-bottom: 14px;
   }
-  .modes label.active { border-color: var(--orange); background: var(--orange-bg); }
-  .modes input { accent-color: var(--orange); width: 18px; height: 18px; }
 
   .field-label { display: block; font-weight: 600; margin: 0 0 6px; }
   input[type=text], textarea {
@@ -180,10 +171,7 @@
 <main>
   <!-- ===== Daxiletmə hissəsi ===== -->
   <section class="panel">
-    <div class="modes" id="modes">
-      <label class="active"><input type="radio" name="mode" value="single" checked> Tək paraqraf (DIM 11-ci sinif)</label>
-      <label><input type="radio" name="mode" value="essay"> Esse (3 paraqraf)</label>
-    </div>
+    <div class="mode-line">Tək paraqraf (DIM 11-ci sinif)</div>
 
     <div class="topic-row">
       <label class="field-label" for="topic">Mövzu (istəyə bağlı)</label>
@@ -191,7 +179,7 @@
       <div class="hint">Mövzu yazılsa, mətnin mövzuya aid sözlər işlədib-işlətmədiyi sadə şəkildə yoxlanılır.</div>
     </div>
 
-    <label class="field-label" for="essay">Mətn (ingilis dilində)</label>
+    <label class="field-label" for="essay">Mətn (ingilis dilində, ən azı 100 söz, bir abzas)</label>
     <textarea id="essay" placeholder="Mətni bura yazın və ya yapışdırın..."></textarea>
 
     <div class="actions">
@@ -212,11 +200,11 @@
    1. SÖZ SİYAHILARI (istəsəniz buradan dəyişə bilərsiniz)
    ========================================================== */
 
-// Əks fikir göstəriciləri
+// Əks fikir göstəriciləri (B meyarında "həm lehinə, həm əleyhinə" üçün)
 const COUNTER_MARKERS = ["some people", "however", "although", "on the other hand",
   "others believe", "others argue", "opponents", "even though", "despite", "nevertheless"];
 
-// Şəxsi fikir göstəriciləri
+// Şəxsi fikir göstəriciləri (lehinə fikir siyahısına daxildir)
 const OPINION_MARKERS = ["i believe", "in my opinion", "i think", "in my view",
   "personally", "from my point of view", "i strongly believe", "i agree", "i disagree"];
 
@@ -328,24 +316,20 @@ function checkTopic(topic, words) {
 }
 
 /* ==========================================================
-   4. STRUKTUR YOXLAMASI VƏ MEYARLAR
+   4. MEYARLAR (rəsmi qiymətləndirmə cədvəlinə uyğun)
    ========================================================== */
 
-// Dəstəkləyici cümlələri qaytarır (ən azı 6 sözlük orta cümlələr)
-function getSupportingSentences(text, mode) {
-  let middle;
-  if (mode === "essay") {
-    const paras = getParagraphs(text);
-    middle = paras.length >= 3 ? paras.slice(1, -1).flatMap(getSentences) : getSentences(text).slice(1, -1);
-  } else {
-    middle = getSentences(text).slice(1, -1);
-  }
-  return middle.filter(s => getWords(s).length >= 6);
+// Dəstəkləyici cümlələr: ilk və son cümlədən başqa, ən azı 6 sözlük cümlələr
+function getSupportingSentences(sentences) {
+  return sentences.slice(1, -1).filter(s => getWords(s).length >= 6);
 }
 
 // A – Tapşırığın yerinə yetirilməsi (0–1)
-function checkA(text, mode, words, sentences) {
-  const items = [], errors = [];
+// 1: həcm ≥100 söz və 4 element tam (əsas fikir, dəstəkləyici fikirlər, yekun fikir, əlaqə)
+// 0.5: həcm 70–99 söz və ya struktur elementlərindən ən azı biri var
+// 0: həcm 70-dən az və ya struktur elementləri yoxdur
+function checkA(text, words, sentences) {
+  const items = [], errors = [], warnings = [];
   const wc = words.length;
 
   // Söz sayı balı
@@ -355,57 +339,35 @@ function checkA(text, mode, words, sentences) {
   else errors.push(["LEN", `Mətndə cəmi ${wc} söz var. 70-dən az söz 0 bal alır (tələb: 100+).`]);
   items.push([wc >= 100, `Söz sayı: ${wc}`]);
 
-  // Struktur elementləri
+  // Tək paraqraf yoxlaması (boş sətir varsa xəbərdarlıq)
   const paras = getParagraphs(text);
+  if (paras.length > 1) {
+    warnings.push("Tək paraqraf tələb olunur.");
+    errors.push(["STR", `Tək paraqraf tələb olunur. Mətndə ${paras.length} abzas (boş sətir) var.`]);
+  }
+
+  // Struktur elementləri
   const first = sentences[0] || "";
   const last = sentences[sentences.length - 1] || "";
-  const support = getSupportingSentences(text, mode);
-  const checks = [];
+  const support = getSupportingSentences(sentences);
+  const linkers = findPhrases(text, LINKERS);
 
-  if (mode === "essay") {
-    const hasParas = paras.length >= 3;
-    checks.push([hasParas, `Giriş, gövdə və nəticə paraqrafları (${paras.length} paraqraf tapıldı)`,
-      `Esse ən azı 3 paraqrafdan ibarət olmalıdır (giriş, gövdə, nəticə). İndi ${paras.length} paraqraf var.`]);
-  }
-
-  const topicOk = getWords(first).length >= 6 && !first.endsWith("?") && !startsWithAny(first, CONCLUSION_MARKERS);
-  checks.push([topicOk, "Əsas fikir cümləsi (topic sentence)",
-    `1-ci cümlə ("${snippet(first)}") əsas fikri aydın bildirmir (çox qısadır və ya sualdır).`]);
-
-  checks.push([support.length >= 2, `Dəstəkləyici cümlələr: ${support.length}`,
-    `Ən azı 2 dəstəkləyici cümlə lazımdır, ${support.length} tapıldı.`]);
-
-  const counter = findPhrases(text, COUNTER_MARKERS);
-  checks.push([counter.length > 0, "Əks fikir" + (counter.length ? ` ("${counter[0]}")` : ""),
-    `Əks fikir tapılmadı ("some people", "however", "although" kimi ifadə işlədin).`]);
-
-  const opinion = findPhrases(text, OPINION_MARKERS);
-  checks.push([opinion.length > 0, "Şəxsi fikir" + (opinion.length ? ` ("${opinion[0]}")` : ""),
-    `Şəxsi fikir tapılmadı ("I believe", "in my opinion" kimi ifadə işlədin).`]);
-
-  let conclOk;
-  if (mode === "essay" && paras.length >= 2) {
-    conclOk = getSentences(paras[paras.length - 1]).some(s => startsWithAny(s, CONCLUSION_MARKERS));
-  } else {
-    conclOk = startsWithAny(last, CONCLUSION_MARKERS);
-  }
-  checks.push([conclOk, "Yekun cümləsi",
-    mode === "essay"
-      ? `Nəticə paraqrafında yekun ifadəsi yoxdur ("In conclusion", "To sum up", "Overall").`
-      : `Son cümlə ("${snippet(last)}") yekun ifadəsi ilə başlamır ("In conclusion", "To sum up", "Overall").`]);
+  const checks = [
+    [getWords(first).length >= 6 && !first.endsWith("?") && !startsWithAny(first, CONCLUSION_MARKERS),
+      "Əsas fikir cümləsi (topic sentence)",
+      `1-ci cümlə ("${snippet(first)}") əsas fikri aydın bildirmir (çox qısadır və ya sualdır).`],
+    [support.length >= 2, `Dəstəkləyici fikirlər: ${support.length}`,
+      `Ən azı 2 dəstəkləyici cümlə lazımdır, ${support.length} tapıldı.`],
+    [startsWithAny(last, CONCLUSION_MARKERS), "Yekun fikir",
+      `Son cümlə ("${snippet(last)}") yekun ifadəsi ilə başlamır ("In conclusion", "To sum up", "Overall").`],
+    [linkers.length >= 1, "Cümlələr arasında əlaqə (bağlayıcı söz)",
+      `Cümlələr arasında heç bir bağlayıcı söz tapılmadı ("however", "moreover", "therefore" kimi).`]
+  ];
 
   checks.forEach(([ok, label, err]) => { items.push([ok, label]); if (!ok) errors.push(["STR", err]); });
 
   const found = checks.filter(c => c[0]).length;
-  const need05 = mode === "essay" ? 4 : 3;
-  const strScore = found === checks.length ? 1 : found >= need05 ? 0.5 : 0;
-
-  // Tək paraqraf rejimində boş sətir xəbərdarlığı
-  const warnings = [];
-  if (mode === "single" && paras.length > 1) {
-    warnings.push("Tək paraqraf tələb olunur.");
-    errors.push(["STR", `Tək paraqraf tələb olunur. Mətndə ${paras.length} abzas (boş sətir) var.`]);
-  }
+  const strScore = found === checks.length ? 1 : found >= 1 ? 0.5 : 0;
 
   // A balı: söz sayı və struktur balından kiçik olanı
   const score = Math.min(lenScore, strScore);
@@ -414,6 +376,9 @@ function checkA(text, mode, words, sentences) {
 }
 
 // B – Mövzunun əhatə edilməsi və məntiqi ardıcıllıq (0–2)
+// 2: ən azı 2 fikir, nümunə/izah, bağlayıcılar, həm lehinə, həm əleyhinə
+// 1: bu şərtlərdən bir neçəsi var (məhdud arqument, bir tərəf, az bağlayıcı)
+// 0: heç bir şərt yoxdur
 function checkB(text, support) {
   const items = [], errors = [];
 
@@ -437,12 +402,15 @@ function checkB(text, support) {
   items.push([bothOk, "Həm lehinə, həm əleyhinə fikir" + (!bothOk ? (pro ? " (yalnız lehinə)" : con ? " (yalnız əleyhinə)" : "") : "")]);
 
   const count = [argsOk, exOk, lnkOk, bothOk].filter(Boolean).length;
-  const score = count === 4 ? 2 : count >= 2 ? 1 : 0;
+  const score = count === 4 ? 2 : count >= 1 ? 1 : 0;
   items.push(["info", "Mövzuya uyğunluq və arqumentlərin keyfiyyəti avtomatik tam yoxlanmır – aşağıdakı müəllim siyahısına baxın."]);
   return { score, max: 2, items, errors };
 }
 
 // C – Qrammatik qaydalara əməl (0–1)
+// 1: müxtəlif sadə və mürəkkəb cümlələr düzgün istifadə olunub
+// 0.5: əsasən sadə, qısa və ya şablon cümlələr
+// 0: cümlə qurulmayıb
 function checkC(sentences) {
   const items = [], errors = [];
   if (sentences.length === 0) return { score: 0, max: 1, items: [[false, "Cümlə qurulmayıb"]], errors };
@@ -478,6 +446,9 @@ function checkC(sentences) {
 }
 
 // D – Söz ehtiyatının müxtəlifliyi (0–1)
+// 1: zəngin söz ehtiyatı, leksik təkrar yoxdur
+// 0.5: kifayət qədər söz ehtiyatı, bəzən təkrar var
+// 0: bəsit söz ehtiyatı, yersiz təkrarlar
 function checkD(words) {
   const items = [], errors = [];
   const content = words.filter(w => !FUNCTION_WORDS.has(w) && w.length > 1);
@@ -504,12 +475,12 @@ function checkD(words) {
 /* ==========================================================
    5. BAL HESABLANMASI
    ========================================================== */
-function analyze(text, mode, topic) {
+function analyze(text, topic) {
   const words = getWords(text);
   const sentences = getSentences(text);
   const res = { words, sentences, alerts: [] };
 
-  const A = checkA(text, mode, words, sentences);
+  const A = checkA(text, words, sentences);
   const B = checkB(text, A.support);
   const C = checkC(sentences);
   const D = checkD(words);
@@ -529,6 +500,10 @@ function analyze(text, mode, topic) {
   if (zeroAll) {
     res.alerts.unshift(["red", zeroAll]);
     Object.values(res.crit).forEach(c => c.score = 0);
+  } else if (A.score === 0) {
+    // Qayda: A balı 0-dırsa, yekun qiymət 0-dır, B, C, D qiymətləndirilmir
+    B.score = 0; C.score = 0; D.score = 0;
+    res.alerts.push(["red", "A meyarı 0 bal olduğu üçün yekun qiymət 0-dır. B, C və D meyarları qiymətləndirilmir."]);
   } else if (B.score === 0) {
     // Qayda: B balı 0-dırsa, C və D də 0
     C.score = 0; D.score = 0;
@@ -660,21 +635,9 @@ function renderResult(res) {
 }
 
 /* ==========================================================
-   7. HADİSƏLƏR (düymələr, rejim seçimi)
+   7. HADİSƏLƏR (düymələr)
    ========================================================== */
 const essayEl = document.getElementById("essay");
-
-function currentMode() {
-  return document.querySelector('input[name="mode"]:checked').value;
-}
-
-// Rejim seçiləndə aktiv kartı vurğula
-document.querySelectorAll('input[name="mode"]').forEach(r => {
-  r.addEventListener("change", () => {
-    document.querySelectorAll("#modes label").forEach(l =>
-      l.classList.toggle("active", l.querySelector("input").checked));
-  });
-});
 
 // Canlı söz sayı
 essayEl.addEventListener("input", () => {
@@ -684,7 +647,7 @@ essayEl.addEventListener("input", () => {
 document.getElementById("checkBtn").addEventListener("click", () => {
   const text = essayEl.value;
   if (!text.trim()) { essayEl.focus(); return; }
-  renderResult(analyze(text, currentMode(), document.getElementById("topic").value));
+  renderResult(analyze(text, document.getElementById("topic").value));
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
