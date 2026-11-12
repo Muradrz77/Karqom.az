@@ -261,7 +261,12 @@ const FUNCTION_WORDS = new Set([
   "the","a","an","is","are","of","to","and","in","it","this","that","i","they",
   "be","was","were","for","on","with","as","at","by","or","but","so","not","can","will",
   "we","you","he","she","my","our","their","its","them","me","us","do","does","have","has",
-  "there","these","those","which","who","if","because","also","very"
+  "there","these","those","which","who","if","because","also","very",
+  // ön sözlər, modal fellər və digər köməkçi sözlər (söz ehtiyatına aid deyil)
+  "about","after","before","during","from","into","than","then","when","while","would","should",
+  "could","may","might","must","more","most","some","many","much","other","each","every","all",
+  "any","only","just","such","what","how","why","where","own","been","had","did","your","his",
+  "her","him","one","out","up","no","too","not","even","both","however","although","since"
 ]);
 
 // Kitabdakı şablon ifadələr (əzbər cümlələr – üslub xəbərdarlığı)
@@ -798,6 +803,9 @@ function checkC(sentences, G) {
   return { score, max: 1, items, errors };
 }
 
+// Bir məzmun sözü ən çoxu neçə dəfə işlənə bilər (bundan çoxu D balını azaldır)
+const MAX_REPEAT = 3;
+
 // D – Söz ehtiyatının müxtəlifliyi (0–1)
 // 1: zəngin söz ehtiyatı, leksik təkrar yoxdur
 // 0.5: kifayət qədər söz ehtiyatı, bəzən təkrar var
@@ -812,21 +820,26 @@ function checkD(words) {
   content.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
   const unique = Object.keys(freq).length;
   const ratio = unique / content.length;
-  const repeated = Object.entries(freq).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  // MAX_REPEAT dəfədən çox işlənən sözlər (bu qayda güzəştə düşmür)
+  const repeated = Object.entries(freq).filter(([, n]) => n > MAX_REPEAT).sort((a, b) => b[1] - a[1]);
 
   const ratioOk = soft(ratio >= 0.6);
-  const repOk = soft(repeated.length <= 2);
   items.push([ratioOk, `Unikal söz nisbəti: ${ratio.toFixed(2)} (${unique} / ${content.length})`]);
-  items.push([repOk, `3+ dəfə təkrarlanan sözlər: ${repeated.length}`]);
+  items.push([repeated.length === 0, `${MAX_REPEAT} dəfədən çox işlənən sözlər: ${repeated.length}`]);
   repeated.forEach(([w, n]) => errors.push(["WW", `"${w}" sözü ${n} dəfə işlənib. Sinonim işlədin.`]));
 
   const topicHits = Object.keys(freq).filter(w => TOPIC_WORDS.has(w));
   items.push(["info", `Kitabın mövzu lüğətindən söz: ${topicHits.length}`]);
 
   let score;
-  if (ratioOk !== false && repOk !== false) score = 1;
-  else if (ratio >= 0.45 && repeated.length <= 4) score = 0.5;
+  if (ratioOk !== false) score = 1;
+  else if (ratio >= 0.45) score = 0.5;
   else score = 0;
+
+  // Təkrar cəzası: 1–2 söz → D ən çoxu 0.5, 3 və daha çox söz → D = 0
+  if (repeated.length >= 3) score = 0;
+  else if (repeated.length >= 1) score = Math.min(score, 0.5);
+  if (repeated.length) items.push(["info", `Bir söz ${MAX_REPEAT} dəfədən çox işlənəndə D balı azalır (1–2 söz: ən çoxu 0.5, 3+ söz: 0).`]);
   return { score, max: 1, items, errors, repeated };
 }
 
@@ -1142,7 +1155,7 @@ function teacherFeedback(res) {
   // --- Söz ehtiyatı (D) ---
   const freq = {};
   words.filter(w => !FUNCTION_WORDS.has(w) && w.length > 1).forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-  const repeated = Object.entries(freq).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  const repeated = Object.entries(freq).filter(([, n]) => n > MAX_REPEAT).sort((a, b) => b[1] - a[1]);
   const topicW = getWords(res.topic || "");
   if (repeated.length) {
     const parts = repeated.slice(0, 4).map(([w, n]) => {
@@ -1151,7 +1164,9 @@ function teacherFeedback(res) {
       return `"${esc(w)}" (${n} dəfə)` +
         (syn ? ` – əvəzinə "${syn.join('", "')}" yaza bilərsən` : isTopic ? ` – mövzu sözüdür, amma bəzən "it/they" ilə əvəz et` : "");
     });
-    vocab.push(`Bəzi sözləri çox təkrarlamısan: ${parts.join("; ")}. Parafraz et: sinonim işlət, sözün formasını dəyiş (məsələn "improve" → "improvement") və ya "it/they" kimi əvəzliklərdən istifadə et.`);
+    vocab.push(`Bəzi sözləri ${MAX_REPEAT} dəfədən çox işlətmisən: ${parts.join("; ")}. ` +
+      `Buna görə D balı ${repeated.length >= 3 ? "0-a endi" : "ən çoxu 0.5 ola bilər"}. ` +
+      `Parafraz et: sinonim işlət, sözün formasını dəyiş (məsələn "improve" → "improvement") və ya "it/they" kimi əvəzliklərdən istifadə et.`);
     next.push("təkrarlanan sözləri sinonimlərlə əvəz etmək");
   } else good.push("sözləri az təkrarlamısan");
 
