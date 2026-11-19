@@ -41,6 +41,32 @@
   .teacher p:last-child { margin-bottom: 0; }
   .teacher b { color: var(--orange); }
 
+  /* ===== Claude ilə ətraflı təhlil ===== */
+  .ai-toggle {
+    display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 10px 12px;
+    border: 2px solid var(--line); border-radius: 10px; background: var(--orange-bg); cursor: pointer; font-size: .95rem;
+  }
+  .ai-toggle input { accent-color: var(--orange); width: 18px; height: 18px; margin-top: 2px; flex: 0 0 auto; }
+  .ai { border: 2px solid var(--orange); }
+  .ai h3 { margin: 18px 0 8px; font-size: 1.02rem; color: var(--orange); }
+  .ai ul, .ai ol { padding-left: 20px; margin: 6px 0; }
+  .ai li { margin: 6px 0; line-height: 1.6; }
+  .ai .q { color: var(--red); font-weight: 600; }
+  .ai .ok { color: var(--green); font-weight: 700; }
+  .ai-total { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .ai-total .big { font-size: 2rem; font-weight: 800; color: var(--orange); margin-right: 6px; }
+  .verdict { display: inline-block; padding: 2px 10px; border-radius: 20px; color: #fff; font-weight: 700; font-size: .9rem; }
+  .textbox { background: var(--orange-bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; line-height: 1.75; }
+  .tablewrap { overflow-x: auto; }
+  .ai td { vertical-align: top; }
+  .ai-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+  .spinner {
+    display: inline-block; width: 16px; height: 16px; border: 3px solid var(--line); border-top-color: var(--orange);
+    border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -3px; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .teacher-ai p { margin: 0 0 10px; line-height: 1.65; }
   .teacher ul { margin: 0 0 10px; padding-left: 20px; }
   .teacher li { margin: 5px 0; line-height: 1.6; }
   .teacher .bad { color: var(--red); font-weight: 600; }
@@ -177,6 +203,12 @@
     textarea { min-height: 260px; }
     .btn-main { width: 100%; }
     .live-count { margin-left: 0; width: 100%; text-align: center; }
+    /* Telefonda səhv cədvəli sətir-sətir göstərilir */
+    .ai table tr:first-child { display: none; }
+    .ai table tr { display: block; border-bottom: 1px solid var(--line); padding: 6px 0; }
+    .ai table td { display: inline; border: 0; padding: 0 6px 0 0; }
+    .ai table td:first-child { font-weight: 700; }
+    .ai table td:last-child { display: block; color: var(--muted); font-size: .88rem; }
   }
 </style>
 </head>
@@ -206,13 +238,20 @@
       <button class="btn btn-light" id="clearBtn">Təmizlə</button>
       <span class="live-count" id="liveCount">0 söz</span>
     </div>
+
+    <!-- Claude ilə ətraflı təhlil: yalnız claude.ai linkində görünür -->
+    <label class="ai-toggle" id="aiRow" hidden>
+      <input type="checkbox" id="aiOn" checked>
+      <span><b>Claude ilə ətraflı təhlil</b> – bu esseyə özəl məsləhətlər, ideya yoxlaması, zaman, qrammatika və hərf səhvləri, düzəldilmiş mətn. Mətn təhlil üçün Claude-a göndərilir.</span>
+    </label>
+    <p class="hint" id="aiOffline" hidden>Ətraflı təhlil (ideya, zaman və hərf səhvləri, özəl məsləhətlər) yalnız claude.ai linkində işləyir. Bu faylda avtomatik yoxlama aparılır.</p>
   </section>
 
   <!-- ===== Nəticə hissəsi ===== -->
   <section id="result"></section>
 </main>
 
-<footer>Bütün yoxlama brauzerdə aparılır. Heç bir məlumat serverə göndərilmir.</footer>
+<footer>Avtomatik yoxlama brauzerdə aparılır. "Claude ilə ətraflı təhlil" seçiləndə mətn təhlil üçün Claude-a göndərilir.</footer>
 
 <script>
 /* ==========================================================
@@ -1230,6 +1269,260 @@ function renderTeacher(res) {
     </div>`;
 }
 
+/* ==========================================================
+   6c. CLAUDE İLƏ ƏTRAFLI TƏHLİL
+   Yalnız claude.ai linkində işləyir (sample imkanı). Faylı kompüterdə
+   açanda bu hissə gizlənir və yalnız avtomatik yoxlama qalır.
+   ========================================================== */
+let aiSample = null;   // Claude funksiyası (yoxdursa null)
+let aiCtl = null;      // Dayandır düyməsi üçün
+
+// Claude-a göndərilən tapşırıq: rubrika, kitabın qaydaları və cavabın JSON forması
+function buildAIPrompt(text, topic) {
+  return `You are an experienced English teacher at Winson Academy in Azerbaijan. You grade one-paragraph opinion essays written by 11th-grade students for the DIM school-leaving exam, and you write feedback that the teacher will read to the student word for word.
+
+TASK / TOPIC: ${topic ? topic : "(not given: infer the question the student is answering from the text and state it)"}
+
+STUDENT'S PARAGRAPH:
+"""
+${text}
+"""
+
+OFFICIAL RUBRIC (total 5 points, half points allowed):
+A - Task achievement (0-1). 1: one paragraph in English, on topic, 100+ words, clear topic sentence, supporting ideas and a concluding sentence, parts well connected. 0.5: mostly on topic, 70-99 words, or only some structure elements, connection partly kept. 0: off-topic or not understandable, under 70 words, no structure, or an entirely memorized template / copied task.
+B - Coverage of the topic and logical sequence (0-2). 2: at least two clear arguments supported with simple examples or general explanations, linking devices connect sentences, both positive (for) and negative (against) sides mentioned, logical connection between ideas. 1: topic mostly covered but arguments limited, only one side, one limited (personal) example, sequence present but few linking devices, digressions or broken logic. 0: does not meet the 1-point level.
+C - Grammar (0-1). 1: varied grammatical forms and structures (simple and complex sentences) used correctly. 0.5: mostly simple sentences; short, template or incomplete sentences; errors sometimes block meaning. 0: cannot build sentences, a pile of words.
+D - Vocabulary range (0-1). 1: rich topic vocabulary used appropriately, no lexical repetition (paraphrase, synonyms, collocations). 0.5: sufficient vocabulary, occasional repetition. 0: basic vocabulary, inappropriate repetition.
+Rules: if A = 0 the total is 0. If B = 0, C and D are 0. Off-topic, another language or unreadable = 0. The same grammar rule broken several times counts as ONE mistake. Be lenient: up to 3 small mistakes do not lower a score; do not take points off for every single error. But if any content word (not a function word) is used more than 3 times, D is at most 0.5, and if 3 or more such words are, D is 0.
+
+THE SCHOOL'S METHOD (base your advice on it): the topic sentence states the main idea and the student's position directly (no announcements like "In this essay I will..."); Idea -> Explain ("This is because...", "This means that...") -> Example ("For example, ..."); opposite opinion + response ("However, some people argue that... Although this might be true, ..."); the concluding sentence starts with "In conclusion / To sum up / Overall" and paraphrases the topic sentence with no new idea; linking words: adding (also, in addition, moreover), reason (because, since), example (for example, such as), contrast (however, although, while), result (therefore, as a result), sequence (firstly, secondly).
+
+CHECK CAREFULLY:
+1. Whether the paragraph answers the task, and every idea that is irrelevant to the topic, illogical, contradictory, too general, unsupported, or a new idea in the conclusion.
+2. EVERY language error: tenses and tense agreement, subject-verb agreement, verb forms, articles, prepositions, singular/plural, word order, word choice and collocations, spelling (typos), punctuation and capital letters. Quote the exact wrong words from the text.
+
+Reply with ONLY one JSON object, no other text, in this shape:
+{
+ "topic": "the task/question in English",
+ "topic_fit": {"verdict": "uyğundur" | "qismən uyğundur" | "uyğun deyil", "comment": "1-2 sentences in Azerbaijani"},
+ "scores": {"A": number, "B": number, "C": number, "D": number},
+ "score_reasons": {"A": "Azerbaijani, 1-2 sentences", "B": "...", "C": "...", "D": "..."},
+ "strengths": ["Azerbaijani, specific to THIS text"],
+ "idea_problems": [{"quote": "exact words from the text", "problem": "Azerbaijani: what is wrong with the idea or logic", "fix": "English: a better sentence the student could write"}],
+ "errors": [{"type": "tense" | "agreement" | "verb_form" | "article" | "preposition" | "plural" | "word_order" | "word_choice" | "spelling" | "punctuation" | "capital", "wrong": "exact words from the text", "correct": "corrected words", "explain": "short Azerbaijani explanation of the rule"}],
+ "repeated_words": [{"word": "...", "count": number, "synonyms": ["...", "..."]}],
+ "corrected_text": "the student's paragraph with ONLY the language errors corrected, ideas unchanged",
+ "improved_text": "a model version of the same paragraph (B1-B2 level, 110-150 words) that keeps the student's ideas and follows the school's method",
+ "teacher_feedback": "natural feedback in Azerbaijani addressed to the student as 'sən', 2-4 short paragraphs separated by a blank line, specific to this text, warm but honest, ready to be read aloud",
+ "next_steps": ["Azerbaijani: the 3 most important things to practise"]
+}
+List every error you find (up to 30). Use empty arrays when there is nothing. All explanations in Azerbaijani (Latin script); quotes and corrections in English.`;
+}
+
+const AI_ERR_TYPES = {
+  tense: "Zaman", agreement: "Uzlaşma", verb_form: "Fel forması", article: "Artikl", preposition: "Ön söz",
+  plural: "Tək/cəm", word_order: "Söz sırası", word_choice: "Söz seçimi", spelling: "Hərf səhvi",
+  punctuation: "Durğu işarəsi", capital: "Böyük hərf"
+};
+
+function arr(x) { return Array.isArray(x) ? x : []; }
+function str(x) { return typeof x === "string" ? x : (x == null ? "" : String(x)); }
+// Balı 0.5 addımla verilmiş aralığa salır
+function clampScore(x, max) { const n = Number(x); return isFinite(n) ? Math.max(0, Math.min(max, Math.round(n * 2) / 2)) : 0; }
+
+// Səhvləri şagirdin öz mətnində qırmızı ilə göstərir
+function markAIErrors(text, errors) {
+  const norm = text.replace(/\s+/g, " ").trim();
+  const lower = norm.toLowerCase();
+  const spans = [];
+  errors.forEach(e => {
+    const w = str(e.wrong).trim();
+    if (!w) return;
+    let from = 0, at = -1;
+    while ((at = lower.indexOf(w.toLowerCase(), from)) >= 0) {
+      if (!spans.some(s => at < s.end && at + w.length > s.start)) break;
+      from = at + 1;
+    }
+    if (at >= 0) spans.push({ start: at, end: at + w.length, fix: str(e.correct) });
+  });
+  spans.sort((a, b) => a.start - b.start);
+  let html = "", pos = 0;
+  spans.forEach(s => {
+    html += esc(norm.slice(pos, s.start)) + `<mark>${esc(norm.slice(s.start, s.end))}</mark><span class="fix">→ ${esc(s.fix)}</span>`;
+    pos = s.end;
+  });
+  return html + esc(norm.slice(pos));
+}
+
+// Müəllimin şagirdə göndərə biləcəyi düz mətn
+function aiPlainText(d, total) {
+  const lines = [`Bal: ${total} / 5`, ""];
+  lines.push(str(d.teacher_feedback).trim(), "");
+  const errs = arr(d.errors);
+  if (errs.length) {
+    lines.push("Səhvlər:");
+    errs.forEach(e => lines.push(`- ${str(e.wrong)} → ${str(e.correct)} (${str(e.explain)})`));
+    lines.push("");
+  }
+  const steps = arr(d.next_steps);
+  if (steps.length) {
+    lines.push("Növbəti addımlar:");
+    steps.forEach((s, i) => lines.push(`${i + 1}. ${str(s)}`));
+  }
+  if (str(d.improved_text)) lines.push("", "Nümunə variant:", str(d.improved_text));
+  return lines.join("\n");
+}
+
+// Claude-un cavabını göstərir
+function renderAI(d, text) {
+  const s = d.scores || {};
+  let A = clampScore(s.A, 1), B = clampScore(s.B, 2), C = clampScore(s.C, 1), D = clampScore(s.D, 1);
+  if (A === 0) { B = 0; C = 0; D = 0; } else if (B === 0) { C = 0; D = 0; }
+  const total = A + B + C + D;
+  const r = d.score_reasons || {};
+  const fit = d.topic_fit || {};
+  const verdict = str(fit.verdict);
+  const vColor = /deyil/.test(verdict) ? "var(--red)" : /qismən/.test(verdict) ? "var(--orange)" : "var(--green)";
+  const errs = arr(d.errors), ideas = arr(d.idea_problems), reps = arr(d.repeated_words);
+  const strengths = arr(d.strengths), steps = arr(d.next_steps);
+
+  // Səhvləri növə görə say
+  const byType = {};
+  errs.forEach(e => { const t = AI_ERR_TYPES[str(e.type)] || "Digər"; byType[t] = (byType[t] || 0) + 1; });
+
+  const reason = (k, label, max, val) => `<li><b>${label}: ${val} / ${max}</b> – ${esc(str(r[k]))}</li>`;
+  const feedbackHtml = str(d.teacher_feedback).split(/\n\s*\n/).filter(p => p.trim()).map(p => `<p>${esc(p.trim())}</p>`).join("");
+
+  aiLastPlain = aiPlainText(d, total);
+
+  return `
+    <div class="panel ai">
+      <h2>Claude-un ətraflı təhlili</h2>
+      <div class="ai-total">
+        <span class="big">${total} / 5</span>
+        <span class="chip">A: ${A}</span><span class="chip">B: ${B}</span><span class="chip">C: ${C}</span><span class="chip">D: ${D}</span>
+      </div>
+      <ul>
+        ${reason("A", "A – Tapşırıq", 1, A)}${reason("B", "B – Mövzu və ardıcıllıq", 2, B)}
+        ${reason("C", "C – Qrammatika", 1, C)}${reason("D", "D – Söz ehtiyatı", 1, D)}
+      </ul>
+
+      <h3>Mövzuya uyğunluq</h3>
+      <p>${str(d.topic) ? `<b>Mövzu:</b> ${esc(str(d.topic))}<br>` : ""}
+        ${verdict ? `<span class="verdict" style="background:${vColor}">${esc(verdict)}</span> ` : ""}${esc(str(fit.comment))}</p>
+
+      ${strengths.length ? `<h3>Yaxşı alınanlar</h3><ul>${strengths.map(x => `<li>${esc(str(x))}</li>`).join("")}</ul>` : ""}
+
+      <h3>İdeya və məntiq</h3>
+      ${ideas.length ? `<ol>${ideas.map(i => `<li><span class="q">"${esc(str(i.quote))}"</span><br>${esc(str(i.problem))}` +
+        (str(i.fix) ? `<br>Daha yaxşı: <span class="ok">${esc(str(i.fix))}</span>` : "") + `</li>`).join("")}</ol>`
+        : `<p>İdeyalarda ciddi problem tapılmadı.</p>`}
+
+      <h3>Dil səhvləri (${errs.length})</h3>
+      ${errs.length ? `
+        <div class="stats">${Object.entries(byType).map(([t, n]) => `<span class="chip">${esc(t)}: ${n}</span>`).join(" ")}</div>
+        <p class="marked-text textbox marked">${markAIErrors(text, errs)}</p>
+        <div class="tablewrap"><table>
+          <tr><th>Növ</th><th>Səhv</th><th>Düzgün</th><th>Qayda</th></tr>
+          ${errs.map(e => `<tr><td>${esc(AI_ERR_TYPES[str(e.type)] || "Digər")}</td><td class="q">${esc(str(e.wrong))}</td>` +
+            `<td class="ok">${esc(str(e.correct))}</td><td>${esc(str(e.explain))}</td></tr>`).join("")}
+        </table></div>` : `<p>Dil səhvi tapılmadı.</p>`}
+
+      ${reps.length ? `<h3>Təkrarlanan sözlər</h3><ul>${reps.map(w => `<li><b>${esc(str(w.word))}</b> (${esc(str(w.count))} dəfə)` +
+        (arr(w.synonyms).length ? ` – əvəzinə: <span class="ok">${esc(arr(w.synonyms).map(str).join(", "))}</span>` : "") + `</li>`).join("")}</ul>` : ""}
+
+      ${str(d.corrected_text) ? `<h3>Düzəldilmiş mətn</h3><div class="textbox">${esc(str(d.corrected_text))}</div>` : ""}
+      ${str(d.improved_text) ? `<h3>Nümunə variant (şagirdin ideyaları ilə)</h3><div class="textbox">${esc(str(d.improved_text))}</div>` : ""}
+
+      <h3>Müəllimin izahı</h3>
+      <div class="teacher-ai">${feedbackHtml}</div>
+      ${steps.length ? `<h3>Növbəti addımlar</h3><ol>${steps.map(x => `<li>${esc(str(x))}</li>`).join("")}</ol>` : ""}
+
+      <div class="ai-actions">
+        <button class="btn btn-main" id="aiCopy">Rəyi kopyala</button>
+        <span class="hint" id="aiCopyMsg"></span>
+      </div>
+      <p class="note">Bu, Claude-un qiymətidir və əsas nəticə kimi istifadə oluna bilər. Aşağıdakı avtomatik yoxlama əlavə məlumat üçündür.</p>
+    </div>`;
+}
+let aiLastPlain = "";
+
+// Xəta kodlarına görə şagirdə/müəllimə göstəriləcək mətn
+function aiErrorText(e) {
+  const code = e && e.code;
+  if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(code))
+    return "Ətraflı təhlil bu hesabda icazə verilmədiyi üçün işləmədi. Aşağıdakı avtomatik yoxlamadan istifadə edin.";
+  if (code === "rate_limited") return "Claude-dan istifadə limiti doldu. Bir az sonra yenidən cəhd edin.";
+  if (code === "session_expired") return "Claude hesabına yenidən daxil olmaq lazımdır.";
+  if (code === "refused") return "Claude bu mətni təhlil etmədi.";
+  if (code === "prompt_too_large") return "Mətn çox uzundur. Yalnız esseni yapışdırın.";
+  return "Təhlil alınmadı. Yenidən cəhd edin.";
+}
+
+// Claude-dan təhlil istəyir və nəticəni göstərir
+async function runAI(text, topic) {
+  const box = document.getElementById("aiBox");
+  if (!aiSample || !box) return;
+  if (aiCtl) aiCtl.abort();
+  const ctl = aiCtl = new AbortController();
+  box.innerHTML = `
+    <div class="panel ai">
+      <h2>Claude-un ətraflı təhlili</h2>
+      <p><span class="spinner"></span>Claude esseni oxuyur: ideyaları, zaman, qrammatika və hərf səhvlərini yoxlayır. Bu adətən 20–60 saniyə çəkir.</p>
+      <p class="hint">Gözləyərkən aşağıda avtomatik yoxlamanın nəticəsinə baxa bilərsiniz.</p>
+      <button class="btn btn-light" id="aiStop">Dayandır</button>
+    </div>`;
+  document.getElementById("aiStop").onclick = () => ctl.abort();
+  try {
+    const data = await aiSample.json(buildAIPrompt(text, topic), { signal: ctl.signal });
+    if (ctl !== aiCtl) return;
+    if (!data || typeof data !== "object") throw { code: "invalid_json" };
+    box.innerHTML = renderAI(data, text);
+    document.getElementById("aiCopy").onclick = copyAI;
+  } catch (e) {
+    if (ctl !== aiCtl) return;
+    if (e && e.code === "cancelled") { box.innerHTML = ""; return; }
+    const permanent = ["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(e && e.code);
+    if (permanent) { document.getElementById("aiRow").hidden = true; aiSample = null; }
+    box.innerHTML = `
+      <div class="panel ai">
+        <h2>Claude-un ətraflı təhlili</h2>
+        <p class="note">${esc(aiErrorText(e))}</p>
+        ${permanent ? "" : `<button class="btn btn-light" id="aiRetry">Yenidən cəhd et</button>`}
+      </div>`;
+    const retry = document.getElementById("aiRetry");
+    if (retry) retry.onclick = () => runAI(text, topic);
+  }
+}
+
+// Rəyi panoya kopyalayır (müəllim şagirdə göndərə bilsin)
+async function copyAI() {
+  const msg = document.getElementById("aiCopyMsg");
+  try {
+    await navigator.clipboard.writeText(aiLastPlain);
+    msg.textContent = "Kopyalandı.";
+  } catch (_) {
+    const ta = document.createElement("textarea");
+    ta.value = aiLastPlain;
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove();
+    msg.textContent = ok ? "Kopyalandı." : "Kopyalamaq alınmadı, mətni əl ilə seçin.";
+  }
+}
+
+// Səhifə açılanda Claude imkanını yoxla: varsa seçimi göstər, yoxdursa qeyd yaz
+(function initAI() {
+  const offline = () => { document.getElementById("aiOffline").hidden = false; };
+  if (!window.claude || typeof window.claude.use !== "function") { offline(); return; }
+  window.claude.use("sample").then(s => {
+    if (s) { aiSample = s; document.getElementById("aiRow").hidden = false; }
+    else offline();
+  }).catch(offline);
+})();
+
 // Bütün nəticəni göstər
 function renderResult(res) {
   const { A, B, C, D } = res.crit;
@@ -1237,6 +1530,7 @@ function renderResult(res) {
   const alerts = res.alerts.map(([cls, msg]) => `<div class="alert ${cls}">${esc(msg)}</div>`).join("");
 
   const html = `
+    <div id="aiBox"></div>
     <div class="panel">
       ${alerts}
       <div class="summary">
@@ -1283,7 +1577,9 @@ essayEl.addEventListener("input", () => {
 document.getElementById("checkBtn").addEventListener("click", () => {
   const text = essayEl.value;
   if (!text.trim()) { essayEl.focus(); return; }
-  renderResult(analyze(text, document.getElementById("topic").value));
+  const topic = document.getElementById("topic").value;
+  renderResult(analyze(text, topic));
+  if (aiSample && document.getElementById("aiOn").checked) runAI(text, topic);
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
