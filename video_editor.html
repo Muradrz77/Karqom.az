@@ -2,7 +2,7 @@
 <html lang="az">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Kadr Studio – Video redaktor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -174,6 +174,11 @@ header .grow{flex:1}
 .kbd{display:inline-block;background:var(--bg4);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px;font-family:'Roboto Mono',monospace}
 #dropAll{position:fixed;inset:0;background:rgba(34,211,197,.12);border:3px dashed var(--accent);z-index:90;display:none;align-items:center;justify-content:center;font-size:22px;font-weight:700;pointer-events:none}
 #dropAll.show{display:flex}
+/* ---- planşet / toxunma ---- */
+.clip,#cwrap,#ruler,#splitter,.sel-box .h,#zoom,input[type=range]{touch-action:none}
+@media (hover:none){.card .add{display:grid;width:26px;height:26px}.clip .hl,.clip .hr{width:16px}.sel-box .h{width:20px;height:20px}.sel-box .h.tl,.sel-box .h.bl{left:-11px}.sel-box .h.tr,.sel-box .h.br{right:-11px}.sel-box .h.tl,.sel-box .h.tr{top:-11px}.sel-box .h.bl,.sel-box .h.br{bottom:-11px}#tabs button{padding:9px 2px}}
+@media (max-width:1300px){#top{grid-template-columns:var(--lw,250px) 1fr var(--rw,270px)}#left{grid-template-columns:56px 1fr}#panel{padding:10px}#projName{width:120px}}
+@media (max-width:1100px){#top{grid-template-columns:var(--lw,220px) 1fr var(--rw,240px)}.row label{flex-basis:78px}#tltools{overflow-x:auto}#tltools button{flex:0 0 auto}#zoom{width:80px}#saveState{display:none}}
 #recDot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);animation:blink 1s infinite;vertical-align:middle;margin-right:6px}
 @keyframes blink{50%{opacity:.2}}
 </style>
@@ -1547,8 +1552,8 @@ function startScrub(e) {
   const wasPlaying = S.playing; if (wasPlaying) pause();
   const mv = ev => { seek(snapScrub(xToTime(ev.clientX))); };
   mv(e);
-  const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); $('#snapline').style.display = 'none'; refreshProps(true); };
-  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+  const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); $('#snapline').style.display = 'none'; refreshProps(true); };
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
 }
 function snapScrub(t) {
   if (!S.snap) return t;
@@ -1578,7 +1583,7 @@ function trackAtY(y) {
 tracksEl.addEventListener('pointerdown', e => {
   if (e.button === 2) return;
   const cel = e.target.closest('.clip');
-  if (!cel) { select(null); startScrub(e); return; }
+  if (!cel) { select(null); if (e.pointerType === 'mouse') startScrub(e); else seek(xToTime(e.clientX)); return; }
   const c = findClip(cel.dataset.cid); if (!c) return;
   const tr = trackOf(c);
   select(c.id);
@@ -1637,7 +1642,7 @@ tracksEl.addEventListener('pointerdown', e => {
     showSnap(snapAt); S.dirty = true;
   };
   const up = () => {
-    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
     showSnap(null);
     if (!st.moved) return;
     if (mode === 'move') {
@@ -1661,7 +1666,7 @@ tracksEl.addEventListener('pointerdown', e => {
     } else repackMain();
     cleanTracks(); commit(); refreshAll();
   };
-  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
 });
 function validateTrans() {
   for (const t of P.tracks) { sortTrack(t); }
@@ -1756,6 +1761,7 @@ function mediaCard(m) {
   d.innerHTML = `${th}${m.duration ? `<span class="dur">${fmt(m.duration, true)}</span>` : ''}<div class="lbl">${esc(m.name)}</div><button class="add" title="Taymlayna əlavə et">+</button>`;
   d.querySelector('.add').onclick = e => { e.stopPropagation(); addMediaToTimeline(m); };
   d.ondblclick = () => addMediaToTimeline(m);
+  if (matchMedia('(hover:none)').matches) d.onclick = () => addMediaToTimeline(m);
   d.oncontextmenu = e => {
     e.preventDefault();
     showCtx(e.clientX, e.clientY, [['＋ Taymlayna əlavə et', '', () => addMediaToTimeline(m)], ['🗑 Medianı sil', '', () => removeMedia(m.id)]]);
@@ -2413,11 +2419,11 @@ cwrap.addEventListener('pointerdown', e => {
     S.dirty = true;
   };
   const up = () => {
-    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
     gv.style.display = gh.style.display = 'none';
     if (st.moved) { commit(); refreshProps(); refreshTimeline(); }
   };
-  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
 });
 cwrap.addEventListener('dblclick', () => {
   const c = selClip(); if (!c || c.kind !== 'text') return;
@@ -2851,10 +2857,10 @@ function helpDialog() {
 /* Proqram önizləmə pəncərəsində və ya telefonda açılıbsa xəbərdarlıq */
 function envWarning() {
   let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
-  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 600;
+  const mobile = Math.min(innerWidth, innerHeight) < 600;
   if (!framed && !mobile) return;
   openModal(`<h3>⚠️ Fayl əlavə etmək işləməyə bilər</h3>
-  <div class="hint" style="font-size:13px">${framed ? 'Proqram başqa tətbiqin daxilində (önizləmə pəncərəsində) açılıb. Bu rejimdə brauzer fayl seçməyə və sürükləyib atmağa icazə vermir.' : 'Proqram telefonda/kiçik ekranda açılıb. Kadr Studio kompüter üçün hazırlanıb: sürükləyib atmaq telefonda işləmir və ekran çox sıx olur.'}
+  <div class="hint" style="font-size:13px">${framed ? 'Proqram başqa tətbiqin daxilində (önizləmə pəncərəsində) açılıb. Bu rejimdə brauzer fayl seçməyə və sürükləyib atmağa icazə vermir.' : 'Ekran çox kiçikdir. Kadr Studio kompüter və planşet üçün hazırlanıb — planşeti üfüqi (yan) tutun və ya kompüterdən açın.'}
   <br><br><b>Həlli:</b><br>1. <b>video_editor.html</b> faylını kompüterə <b>yükləyin</b> (Download).<br>2. Fayla sağ klik → <b>Open with → Google Chrome</b>.<br>3. <b>＋ İdxal</b> düyməsini basın və ya videonu pəncərəyə sürükləyin.</div>
   <div class="btnrow" style="margin-top:14px"><button onclick="closeModal()">Yenə də davam et</button></div>`);
 }
@@ -2897,8 +2903,8 @@ function init() {
   // taymlayn hündürlüyü
   $('#splitter').addEventListener('pointerdown', e => {
     const mv = ev => { const hh = clamp(innerHeight - ev.clientY - 3, 140, innerHeight - 260); $('#app').style.setProperty('--tlh', hh + 'px'); };
-    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); fitStage(); renderTimeline(); };
-    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); fitStage(); renderTimeline(); };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
   });
   new ResizeObserver(() => { fitStage(); drawRuler(); }).observe($('#stage'));
   window.addEventListener('resize', () => renderTimeline());
