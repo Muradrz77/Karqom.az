@@ -1,0 +1,2885 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kadr Studio – Video redaktor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Montserrat:wght@400;700;900&family=Bebas+Neue&family=Anton&family=Oswald:wght@400;700&family=Pacifico&family=Lobster&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,700;1,700&family=Dancing+Script:wght@700&family=Bangers&family=Roboto+Mono:wght@500&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1013; --bg2:#17181d; --bg3:#1f2128; --bg4:#2a2d36; --line:#2f323c;
+  --text:#e9eaee; --muted:#8b8f9c; --accent:#22d3c5; --accent2:#7c5cff; --danger:#ff5b6b;
+  --vid:#2b6cb0; --img:#2f855a; --txt:#b7791f; --aud:#2c7a7b; --fx:#805ad5; --stk:#c05621;
+  --radius:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 Inter,system-ui,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+input,select,textarea,button{font:inherit;color:inherit}
+textarea,input[type=text]{user-select:text;-webkit-user-select:text}
+button{cursor:pointer;background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--text)}
+button:hover{background:var(--bg4)}
+button.primary{background:linear-gradient(135deg,var(--accent),#1aa9e0);border:none;color:#04201d;font-weight:700}
+button.primary:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;border-color:transparent}
+button.ghost:hover{background:var(--bg3)}
+button:disabled{opacity:.4;cursor:default}
+button.on{background:rgba(34,211,197,.15);border-color:var(--accent);color:var(--accent)}
+select,input[type=text],input[type=number],textarea{background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:5px 8px;outline:none}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+input[type=range]{accent-color:var(--accent);width:100%}
+input[type=color]{width:34px;height:26px;border:1px solid var(--line);border-radius:6px;background:none;padding:1px;cursor:pointer}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#3a3d48;border-radius:6px}::-webkit-scrollbar-track{background:transparent}
+
+#app{display:grid;grid-template-rows:48px minmax(200px,1fr) 6px var(--tlh,38%);height:100vh}
+header{display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;font-size:16px;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.logo b{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#081018;font-size:14px}
+header .grow{flex:1}
+#projName{background:transparent;border:1px solid transparent;width:200px;text-align:center}
+#projName:hover{border-color:var(--line)}
+.hgroup{display:flex;gap:4px;align-items:center}
+
+#top{display:grid;grid-template-columns:var(--lw,330px) 1fr var(--rw,320px);min-height:0}
+#splitter{background:var(--bg2);cursor:ns-resize;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#splitter:hover{background:var(--accent)}
+
+/* ---- left panel ---- */
+#left{display:grid;grid-template-columns:64px 1fr;background:var(--bg2);border-right:1px solid var(--line);min-height:0}
+#tabs{display:flex;flex-direction:column;gap:2px;padding:6px 4px;border-right:1px solid var(--line);overflow:auto}
+#tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;border:none;background:transparent;color:var(--muted);font-size:10.5px}
+#tabs button .ic{font-size:18px;line-height:1}
+#tabs button.active,#tabs button:hover{color:var(--text);background:var(--bg3)}
+#tabs button.active{color:var(--accent)}
+#panel{overflow:auto;padding:12px;min-height:0}
+.ptitle{font-weight:700;font-size:14px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--accent);color:var(--text);background:rgba(34,211,197,.05)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.grid.sm{grid-template-columns:repeat(auto-fill,minmax(52px,1fr))}
+.card{position:relative;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px}
+.card:hover{border-color:var(--accent)}
+.card img,.card canvas{width:100%;height:100%;object-fit:cover;display:block}
+.card .lbl{position:absolute;left:0;right:0;bottom:0;padding:2px 5px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.card .dur{position:absolute;right:4px;top:4px;background:rgba(0,0,0,.65);padding:0 4px;border-radius:4px;font-size:10px}
+.card .add{position:absolute;right:4px;bottom:4px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#04201d;display:none;place-items:center;font-weight:800;border:none;padding:0}
+.card:hover .add{display:grid}
+.card.tall{aspect-ratio:1/1}
+.card.emoji{font-size:30px;aspect-ratio:1}
+.card .fxprev{width:100%;height:100%;display:grid;place-items:center;font-size:22px}
+.chip{display:inline-block;padding:3px 8px;border-radius:20px;background:var(--bg3);border:1px solid var(--line);font-size:11px;margin:0 4px 4px 0;cursor:pointer}
+.chip.active{border-color:var(--accent);color:var(--accent)}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.row label{flex:0 0 92px;color:var(--muted);font-size:12px}
+.row .val{flex:0 0 44px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
+.row > input[type=range]{flex:1}
+.hint{color:var(--muted);font-size:11.5px;line-height:1.5}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btnrow button{flex:1;white-space:nowrap;padding:6px 6px}
+
+/* ---- preview ---- */
+#center{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0b0c0f}
+#stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;padding:14px}
+#cwrap{position:relative;box-shadow:0 0 0 1px #262832, 0 10px 40px rgba(0,0,0,.5);background:#000}
+#cv{display:block;width:100%;height:100%}
+#overlay{position:absolute;inset:0;pointer-events:none}
+.sel-box{position:absolute;border:1.5px solid var(--accent);pointer-events:none;transform-origin:center center}
+.sel-box .h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:50%;pointer-events:auto}
+.sel-box .h.tl{left:-7px;top:-7px;cursor:nwse-resize}.sel-box .h.tr{right:-7px;top:-7px;cursor:nesw-resize}
+.sel-box .h.bl{left:-7px;bottom:-7px;cursor:nesw-resize}.sel-box .h.br{right:-7px;bottom:-7px;cursor:nwse-resize}
+.sel-box .h.rot{left:50%;top:-30px;margin-left:-7px;cursor:grab;background:var(--accent)}
+.sel-box .h.rot::after{content:"";position:absolute;left:3px;top:10px;width:2px;height:16px;background:var(--accent)}
+.guide{position:absolute;background:#ff3ea5;pointer-events:none;display:none}
+.guide.v{width:1px;top:0;bottom:0;left:50%}.guide.h{height:1px;left:0;right:0;top:50%}
+#controls{height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;border-top:1px solid var(--line);background:var(--bg2)}
+#timecode{font-variant-numeric:tabular-nums;font-family:'Roboto Mono',monospace;font-size:12px}
+#timecode span{color:var(--muted)}
+#playBtn{width:36px;height:30px;font-size:15px;padding:0}
+#controls .grow{flex:1}
+
+/* ---- right ---- */
+#right{background:var(--bg2);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#ptabs{display:flex;gap:2px;padding:6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#ptabs button{padding:4px 9px;border:none;background:transparent;color:var(--muted);font-size:12px}
+#ptabs button.active{color:var(--text);background:var(--bg3)}
+#props{flex:1;overflow:auto;padding:12px}
+.empty{color:var(--muted);text-align:center;margin-top:40px;line-height:1.7}
+.kf{width:22px;height:22px;padding:0;border:none;background:transparent;color:var(--muted);font-size:13px;flex:0 0 22px}
+.kf.has{color:#ffd166}.kf.at{color:#ffd166;text-shadow:0 0 6px #ffd166}
+.sect{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.seg{display:flex;background:var(--bg3);border-radius:7px;padding:2px;gap:2px;margin-bottom:8px}
+.seg button{flex:1;border:none;background:transparent;padding:4px 6px;font-size:12px;color:var(--muted)}
+.seg button.active{background:var(--bg4);color:var(--text)}
+
+/* ---- timeline ---- */
+#timeline{display:flex;flex-direction:column;background:var(--bg2);min-height:0}
+#tltools{height:38px;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid var(--line)}
+#tltools button{padding:4px 8px;font-size:12.5px}
+#tltools .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+#tltools .grow{flex:1}
+#zoom{width:120px}
+#tlbody{flex:1;display:grid;grid-template-columns:136px 1fr;min-height:0;position:relative}
+#theads{overflow:hidden;border-right:1px solid var(--line);background:var(--bg2);position:relative}
+#theads .spacer{height:28px;border-bottom:1px solid var(--line)}
+.thead{display:flex;align-items:center;gap:2px;padding:0 6px;border-bottom:1px solid #22242b;font-size:11px;color:var(--muted)}
+.thead .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thead button{padding:1px 3px;border:none;background:transparent;color:var(--muted);font-size:12px}
+.thead button.off{color:var(--danger)}
+#tscroll{overflow:auto;position:relative}
+#tinner{position:relative;min-height:100%}
+#ruler{position:sticky;top:0;height:28px;background:var(--bg2);border-bottom:1px solid var(--line);z-index:5;cursor:pointer}
+#ruler canvas{position:absolute;left:0;top:0}
+.track{position:relative;border-bottom:1px solid #22242b}
+.track.main{background:rgba(255,255,255,.025)}
+.track.droptarget{background:rgba(34,211,197,.08)}
+.clip{position:absolute;top:3px;bottom:3px;border-radius:6px;overflow:hidden;cursor:grab;border:1.5px solid rgba(255,255,255,.12);background:var(--vid);color:#fff;font-size:11px}
+.clip.sel{border-color:#fff;box-shadow:0 0 0 1.5px var(--accent)}
+.clip.image{background:var(--img)}.clip.text{background:var(--txt)}.clip.audio{background:var(--aud)}.clip.fx,.clip.filter{background:var(--fx)}.clip.sticker,.clip.shape{background:var(--stk)}
+.clip .thumbs{position:absolute;inset:0;display:flex;opacity:.9}
+.clip .thumbs div{flex:0 0 auto;height:100%;background-size:cover;background-position:center;border-right:1px solid rgba(0,0,0,.3)}
+.clip canvas.wave{position:absolute;left:0;bottom:0;height:100%;pointer-events:none}
+.clip .cl{position:absolute;left:6px;top:2px;right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;pointer-events:none;font-weight:600}
+.clip .badge{position:absolute;right:5px;bottom:2px;font-size:10px;background:rgba(0,0,0,.55);padding:0 4px;border-radius:4px;pointer-events:none}
+.clip .hl,.clip .hr{position:absolute;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:2}
+.clip .hl{left:0}.clip .hr{right:0}
+.clip.sel .hl,.clip.sel .hr{background:rgba(255,255,255,.9)}
+.clip.sel .hl::after,.clip.sel .hr::after{content:"";position:absolute;left:3px;top:35%;height:30%;width:2px;background:#333;border-radius:2px}
+.clip .kfm{position:absolute;bottom:3px;width:8px;height:8px;background:#ffd166;transform:rotate(45deg);margin-left:-4px;pointer-events:none;border:1px solid #000}
+.trans{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:4px;background:var(--bg);border:1.5px solid var(--muted);z-index:4;cursor:pointer;display:grid;place-items:center;font-size:10px;color:var(--muted)}
+.trans:hover{border-color:var(--accent);color:var(--accent)}
+.trans.has{background:var(--accent);border-color:#fff;color:#04201d}
+#playhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:8;pointer-events:none;margin-left:-1px}
+#playhead::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top:9px solid #fff}
+.marker{position:absolute;top:16px;width:2px;height:12px;background:#ffd166;margin-left:-1px;z-index:6;cursor:pointer}
+.beat{position:absolute;bottom:0;width:4px;height:4px;border-radius:50%;background:#ffd166;margin-left:-2px;pointer-events:none}
+#snapline{position:absolute;top:0;bottom:0;width:1px;background:#ffd166;z-index:7;display:none;pointer-events:none}
+.tl-empty{position:absolute;left:0;right:0;top:50%;text-align:center;color:var(--muted);pointer-events:none}
+
+/* ---- modal / toast ---- */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;width:440px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal h3{margin:0 0 14px;font-size:17px}
+.prog{height:8px;background:var(--bg4);border-radius:8px;overflow:hidden;margin:12px 0}
+.prog div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--bg4);border:1px solid var(--line);padding:9px 16px;border-radius:10px;z-index:200;transition:.25s;opacity:0;pointer-events:none}
+#toast.show{transform:translateX(-50%);opacity:1}
+#ctx{position:fixed;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:4px;z-index:150;display:none;min-width:170px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#ctx button{display:flex;justify-content:space-between;width:100%;border:none;background:transparent;text-align:left;padding:6px 10px;gap:16px}
+#ctx button:hover{background:var(--bg4)}
+#ctx button span{color:var(--muted);font-size:11px}
+.kbd{display:inline-block;background:var(--bg4);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px;font-family:'Roboto Mono',monospace}
+#dropAll{position:fixed;inset:0;background:rgba(34,211,197,.12);border:3px dashed var(--accent);z-index:90;display:none;align-items:center;justify-content:center;font-size:22px;font-weight:700;pointer-events:none}
+#dropAll.show{display:flex}
+#recDot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);animation:blink 1s infinite;vertical-align:middle;margin-right:6px}
+@keyframes blink{50%{opacity:.2}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><div class="mark">▶</div><span>Kadr <b>Studio</b></span></div>
+    <div class="hgroup">
+      <button class="ghost" id="newBtn" title="Yeni layihə">＋ Yeni</button>
+      <button class="ghost" id="undoBtn" title="Geri al (Ctrl+Z)">↶</button>
+      <button class="ghost" id="redoBtn" title="İrəli (Ctrl+Shift+Z)">↷</button>
+    </div>
+    <div class="grow"></div>
+    <input id="projName" type="text" value="Layihəm" spellcheck="false">
+    <div class="grow"></div>
+    <span id="saveState" class="hint"></span>
+    <button class="ghost" id="helpBtn" title="Qısayollar">⌨</button>
+    <button class="primary" id="exportBtn">⬇ Eksport</button>
+  </header>
+
+  <div id="top">
+    <div id="left">
+      <div id="tabs"></div>
+      <div id="panel"></div>
+    </div>
+    <div id="center">
+      <div id="stage">
+        <div id="cwrap">
+          <canvas id="cv"></canvas>
+          <div id="overlay"><div class="guide v"></div><div class="guide h"></div></div>
+        </div>
+      </div>
+      <div id="controls">
+        <div id="timecode">00:00.00 <span>/ 00:00.00</span></div>
+        <div class="grow"></div>
+        <button class="ghost" id="prevFrame" title="Əvvəlki kadr (←)">⏮</button>
+        <button id="playBtn" title="Oynat (Boşluq)">▶</button>
+        <button class="ghost" id="nextFrame" title="Növbəti kadr (→)">⏭</button>
+        <div class="grow"></div>
+        <select id="ratioSel" title="Ekran nisbəti"></select>
+        <select id="pqSel" title="Önizləmə keyfiyyəti">
+          <option value="1">Tam</option><option value="0.5" selected>1/2</option><option value="0.33">1/3</option>
+        </select>
+        <button class="ghost" id="snapBtn" title="Kadrı PNG kimi saxla">📷</button>
+        <button class="ghost" id="fsBtn" title="Tam ekran">⛶</button>
+      </div>
+    </div>
+    <div id="right">
+      <div id="ptabs"></div>
+      <div id="props"></div>
+    </div>
+  </div>
+
+  <div id="splitter"></div>
+
+  <div id="timeline">
+    <div id="tltools">
+      <button class="ghost" id="tSplit" title="Böl (S)">✂ Böl</button>
+      <button class="ghost" id="tDel" title="Sil (Delete)">🗑</button>
+      <button class="ghost" id="tDup" title="Dublikat (Ctrl+D)">⧉</button>
+      <button class="ghost" id="tFreeze" title="Kadrı dondur">❄ Dondur</button>
+      <button class="ghost" id="tDetach" title="Səsi ayır">🎵 Səsi ayır</button>
+      <button class="ghost" id="tTrimL" title="Sol tərəfi playhead-ə qədər kəs (Q)">⇤</button>
+      <button class="ghost" id="tTrimR" title="Sağ tərəfi playhead-dən kəs (W)">⇥</button>
+      <div class="sep"></div>
+      <button class="ghost" id="tMarker" title="Marker əlavə et (M)">🔖</button>
+      <button class="ghost on" id="tMagnet" title="Əsas trek maqniti">🧲</button>
+      <button class="ghost on" id="tSnap" title="Yapışma (snap)">⎍</button>
+      <div class="grow"></div>
+      <span class="hint" id="tlInfo"></span>
+      <button class="ghost" id="zoomFit" title="Hamısını göstər">⤢</button>
+      <span>🔍</span><input type="range" id="zoom" min="0" max="100" value="40">
+    </div>
+    <div id="tlbody">
+      <div id="theads"><div class="spacer"></div><div id="theadList"></div></div>
+      <div id="tscroll">
+        <div id="tinner">
+          <div id="ruler"><canvas id="rulerCv"></canvas></div>
+          <div id="tracks"></div>
+          <div id="snapline"></div>
+          <div id="playhead"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+<div id="ctx"></div>
+<div id="dropAll">Faylları bura buraxın</div>
+<input type="file" id="fileIn" multiple accept="video/*,audio/*,image/*" hidden>
+<input type="file" id="srtIn" accept=".srt,.vtt,.txt" hidden>
+<script>
+'use strict';
+/* =========================================================
+   Kadr Studio — brauzerdə işləyən video redaktor
+   Bütün emal lokal aparılır, fayllar heç yerə göndərilmir.
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeIn = t => t * t * t;
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fmt(t, short) {
+  t = Math.max(0, t || 0);
+  const m = Math.floor(t / 60), s = t - m * 60;
+  if (short) return m + ':' + String(Math.floor(s)).padStart(2, '0');
+  return String(m).padStart(2, '0') + ':' + s.toFixed(2).padStart(5, '0');
+}
+function hexToRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; }
+function rand1(n) { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms); }
+
+const RATIOS = {
+  '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350],
+  '4:3': [1440, 1080], '3:4': [1080, 1440], '21:9': [2520, 1080], '2:1': [2160, 1080]
+};
+const RATIO_NAMES = { '16:9': '16:9 YouTube', '9:16': '9:16 TikTok/Reels', '1:1': '1:1 Kvadrat', '4:5': '4:5 Instagram', '4:3': '4:3', '3:4': '3:4', '21:9': '21:9 Kino', '2:1': '2:1' };
+
+/* ---------------- Kataloqlar ---------------- */
+const FILTERS = [
+  { id: 'none', n: 'Yoxdur' },
+  { id: 'vivid', n: 'Canlı', p: { saturation: .35, contrast: .15, exposure: .05 } },
+  { id: 'warm', n: 'İsti', p: { temp: .4, saturation: .1 } },
+  { id: 'cool', n: 'Soyuq', p: { temp: -.4, tint: -.05 } },
+  { id: 'bw', n: 'Ağ-qara', p: { saturation: -1, contrast: .2 } },
+  { id: 'noir', n: 'Noir', p: { saturation: -1, contrast: .5, exposure: -.1, vignette: .5 } },
+  { id: 'retro', n: 'Retro', p: { sepia: .45, fade: .15, contrast: -.05, grain: .25 } },
+  { id: 'vintage', n: 'Vintaj', p: { sepia: .3, fade: .25, saturation: -.2, vignette: .4, temp: .1 } },
+  { id: 'teal', n: 'Kino', p: { split: 1, splitS: [0, .45, .6], splitH: [1, .6, .3], contrast: .15, saturation: .1 } },
+  { id: 'moody', n: 'Tutqun', p: { exposure: -.15, saturation: -.3, contrast: .2, tint: .05, fade: .1 } },
+  { id: 'matte', n: 'Mat', p: { fade: .3, contrast: -.1, saturation: -.1 } },
+  { id: 'pastel', n: 'Pastel', p: { fade: .2, saturation: -.15, exposure: .15, contrast: -.15 } },
+  { id: 'golden', n: 'Qızılı saat', p: { temp: .45, tint: .1, saturation: .2, highlights: -.1 } },
+  { id: 'cyber', n: 'Kiberpank', p: { split: 1, splitS: [.25, 0, .7], splitH: [1, .25, .85], saturation: .3, contrast: .2 } },
+  { id: 'forest', n: 'Meşə', p: { tint: -.2, saturation: .1, shadows: .1, split: .6, splitS: [0, .35, .1], splitH: [.9, .9, .6] } },
+  { id: 'sunset', n: 'Gün batımı', p: { temp: .3, tint: .2, split: .6, splitS: [.45, .1, .45], splitH: [1, .6, .3] } },
+  { id: 'drama', n: 'Drama', p: { contrast: .45, saturation: -.15, shadows: -.15, highlights: -.2, vignette: .35 } },
+  { id: 'filmf', n: 'Film F', p: { tint: -.06, saturation: -.05, contrast: .1, split: .4, splitS: [0, .25, .35], splitH: [1, .95, .85], grain: .15 } },
+  { id: 'filmk', n: 'Film K', p: { temp: .15, contrast: .12, saturation: .12, split: .4, splitS: [.1, .1, .3], splitH: [1, .85, .6], grain: .15 } },
+  { id: 'bright', n: 'Parlaq', p: { exposure: .25, highlights: -.1, shadows: .2, saturation: .05 } },
+  { id: 'faded', n: 'Solğun', p: { saturation: -.5, fade: .2 } },
+  { id: 'rose', n: 'Qızılgül', p: { tint: .25, temp: .1, fade: .1, saturation: -.05 } },
+  { id: 'ice', n: 'Buz', p: { temp: -.5, exposure: .1, saturation: -.25, highlights: .1 } },
+  { id: 'invert', n: 'Neqativ', p: { invert: 1 } },
+];
+const ADJ_KEYS = [
+  ['exposure', 'Ekspozisiya', -1, 1], ['brightness', 'Parlaqlıq', -1, 1], ['contrast', 'Kontrast', -1, 1],
+  ['saturation', 'Doyğunluq', -1, 1], ['temp', 'Temperatur', -1, 1], ['tint', 'Ton', -1, 1],
+  ['hue', 'Rəng çarxı', -1, 1], ['highlights', 'İşıqlar', -1, 1], ['shadows', 'Kölgələr', -1, 1],
+  ['fade', 'Solğunluq', 0, 1], ['sharpen', 'Kəskinlik', 0, 1], ['vignette', 'Vinyet', 0, 1],
+  ['grain', 'Dən', 0, 1], ['blur', 'Bulanıqlıq', 0, 1],
+];
+const EFFECTS = [
+  { id: 'shake', n: 'Silkələnmə', ic: '📳' }, { id: 'zoompulse', n: 'Zum nəbz', ic: '💓' },
+  { id: 'zoomin', n: 'Yavaş zum', ic: '🔎' }, { id: 'flash', n: 'İşıq çaxması', ic: '⚡' },
+  { id: 'strobe', n: 'Strob', ic: '🎆' }, { id: 'glitch', n: 'Qlitç', ic: '👾', gl: { glitch: .7, rgb: .5 } },
+  { id: 'rgb', n: 'RGB ayrılma', ic: '🌈', gl: { rgb: .9 } }, { id: 'vhs', n: 'VHS', ic: '📼', gl: { vhs: 1, scan: .6, grain: .3, rgb: .35, saturation: -.2 } },
+  { id: 'oldfilm', n: 'Köhnə film', ic: '🎞', gl: { sepia: .7, grain: .5, vignette: .6, fade: .1 } },
+  { id: 'grain', n: 'Dən', ic: '🌫', gl: { grain: .6 } }, { id: 'vignette', n: 'Vinyet', ic: '⚫', gl: { vignette: .9 } },
+  { id: 'blur', n: 'Bulanıq', ic: '💧', gl: { blur: .35 } }, { id: 'pixel', n: 'Piksel', ic: '🟪', gl: { pixel: .5 } },
+  { id: 'bw', n: 'Ağ-qara', ic: '◐', gl: { saturation: -1, contrast: .15 } }, { id: 'neon', n: 'Neon kənar', ic: '💡', gl: { edge: 1 } },
+  { id: 'letterbox', n: 'Kino zolaqları', ic: '🎬' }, { id: 'split3', n: '3 ekran', ic: '▥' },
+  { id: 'split4', n: '4 ekran', ic: '⊞' }, { id: 'mirror', n: 'Güzgü', ic: '🪞' },
+  { id: 'snow', n: 'Qar', ic: '❄️' }, { id: 'rain', n: 'Yağış', ic: '🌧' }, { id: 'confetti', n: 'Konfetti', ic: '🎉' },
+  { id: 'hearts', n: 'Ürəklər', ic: '💕' }, { id: 'sparkle', n: 'Parıltı', ic: '✨' }, { id: 'bokeh', n: 'Bokeh', ic: '🔆' },
+  { id: 'leak', n: 'İşıq sızması', ic: '🌅' }, { id: 'rec', n: 'REC kamera', ic: '🔴' },
+];
+const TRANSITIONS = [
+  { id: 'fade', n: 'Solma', ic: '◑' }, { id: 'black', n: 'Qaraya keçid', ic: '⬛' }, { id: 'white', n: 'Ağa keçid', ic: '⬜' },
+  { id: 'slideL', n: 'Sola sürüşmə', ic: '⇠' }, { id: 'slideR', n: 'Sağa sürüşmə', ic: '⇢' },
+  { id: 'slideU', n: 'Yuxarı sürüşmə', ic: '⇡' }, { id: 'slideD', n: 'Aşağı sürüşmə', ic: '⇣' },
+  { id: 'pushL', n: 'İtələ sola', ic: '⇇' }, { id: 'pushR', n: 'İtələ sağa', ic: '⇉' },
+  { id: 'wipeL', n: 'Silmə →', ic: '▶' }, { id: 'wipeR', n: 'Silmə ←', ic: '◀' }, { id: 'wipeD', n: 'Silmə ↓', ic: '▼' },
+  { id: 'circle', n: 'Dairə', ic: '◯' }, { id: 'heart', n: 'Ürək', ic: '♥' }, { id: 'doors', n: 'Qapılar', ic: '◫' },
+  { id: 'zoomIn', n: 'Zum içəri', ic: '⊕' }, { id: 'zoomOut', n: 'Zum çölə', ic: '⊖' }, { id: 'spin', n: 'Fırlanma', ic: '↻' },
+  { id: 'blur', n: 'Bulanıq', ic: '◌' }, { id: 'glitch', n: 'Qlitç', ic: '▦' },
+];
+const ANIMS_IN = [
+  ['none', 'Yoxdur'], ['fade', 'Solaraq'], ['slideL', 'Soldan'], ['slideR', 'Sağdan'], ['slideU', 'Aşağıdan'], ['slideD', 'Yuxarıdan'],
+  ['zoomIn', 'Böyüyərək'], ['zoomOut', 'Kiçilərək'], ['pop', 'Partlayış'], ['bounce', 'Sıçrayış'], ['spin', 'Fırlanaraq'],
+  ['blur', 'Bulanıqdan'], ['rise', 'Qalxaraq'], ['type', 'Yazı makinası (mətn)'],
+];
+const ANIMS_OUT = [
+  ['none', 'Yoxdur'], ['fade', 'Solaraq'], ['slideL', 'Sola'], ['slideR', 'Sağa'], ['slideU', 'Yuxarı'], ['slideD', 'Aşağı'],
+  ['zoomIn', 'Böyüyərək'], ['zoomOut', 'Kiçilərək'], ['pop', 'Partlayış'], ['spin', 'Fırlanaraq'], ['blur', 'Bulanığa'], ['type', 'Silinərək (mətn)'],
+];
+const ANIMS_LOOP = [
+  ['none', 'Yoxdur'], ['pulse', 'Nəbz'], ['float', 'Üzmə'], ['shake', 'Titrəmə'], ['swing', 'Yellənmə'],
+  ['flicker', 'Sayrışma'], ['spin', 'Fırlanma'], ['heartbeat', 'Ürək döyüntüsü'], ['zoom', 'Yavaş zum (Ken Burns)'],
+];
+const SPEED_CURVES = [
+  { id: 'none', n: 'Yoxdur', pts: null },
+  { id: 'montage', n: 'Montaj', pts: [1.6, 1.6, .4, .4, 1.6, 1.6] },
+  { id: 'hero', n: 'Qəhrəman', pts: [1.5, 1.5, .25, .25, 1.5, 1.5] },
+  { id: 'bullet', n: 'Güllə', pts: [2, .2, .2, .2, 2] },
+  { id: 'jump', n: 'Atlama', pts: [.5, .5, 3, 3, .5, .5] },
+  { id: 'flashin', n: 'Sürətli giriş', pts: [3, 2, 1, .6, .6] },
+  { id: 'flashout', n: 'Sürətli çıxış', pts: [.6, .6, 1, 2, 3] },
+  { id: 'smooth', n: 'Yumşaq', pts: [.5, 1.5, .5] },
+];
+const BLENDS = [['source-over', 'Normal'], ['multiply', 'Çoxaltma'], ['screen', 'Ekran'], ['overlay', 'Örtük'], ['darken', 'Tündləşdir'], ['lighten', 'Açıqlaşdır'], ['color-dodge', 'Rəng yandırma'], ['color-burn', 'Rəng qaraltma'], ['hard-light', 'Sərt işıq'], ['soft-light', 'Yumşaq işıq'], ['difference', 'Fərq'], ['exclusion', 'İstisna'], ['hue', 'Çalar'], ['saturation', 'Doyğunluq'], ['color', 'Rəng'], ['luminosity', 'Parlaqlıq']];
+const MASKS = [['none', 'Yoxdur', '⊘'], ['line', 'Xətti', '▄'], ['mirror', 'Güzgü', '▬'], ['circle', 'Dairə', '●'], ['rect', 'Düzbucaq', '■'], ['heart', 'Ürək', '♥'], ['star', 'Ulduz', '★']];
+const FONTS = ['Inter', 'Montserrat', 'Poppins', 'Bebas Neue', 'Anton', 'Oswald', 'Pacifico', 'Lobster', 'Permanent Marker', 'Playfair Display', 'Dancing Script', 'Bangers', 'Roboto Mono', 'Georgia', 'Arial', 'Impact'];
+const DEFAULT_TEXT = {
+  content: 'Mətn daxil edin', font: 'Montserrat', size: 80, color: '#ffffff', color2: '#ff3ea5', grad: false, bold: true, italic: false,
+  align: 'center', letter: 0, lineH: 1.2, stroke: { on: false, color: '#000000', w: 6 }, shadow: { on: false, color: '#000000', blur: 10, x: 3, y: 3 },
+  bg: { on: false, color: '#000000', opacity: .7, pad: 18, radius: 12 }
+};
+const TEXT_PRESETS = [
+  { n: 'Sadə', s: { font: 'Inter', bold: true } },
+  { n: 'Subtitr', s: { font: 'Inter', size: 56, bold: true, stroke: { on: true, color: '#000000', w: 7 } } },
+  { n: 'Sarı subtitr', s: { font: 'Montserrat', size: 60, color: '#ffe14d', bold: true, stroke: { on: true, color: '#000000', w: 9 } } },
+  { n: 'Ağ qutu', s: { font: 'Poppins', color: '#111111', bold: true, bg: { on: true, color: '#ffffff', opacity: 1, pad: 18, radius: 14 } } },
+  { n: 'Qırmızı qutu', s: { font: 'Anton', size: 90, color: '#ffffff', bold: false, bg: { on: true, color: '#e11d48', opacity: 1, pad: 20, radius: 6 } } },
+  { n: 'Neon', s: { font: 'Pacifico', size: 90, color: '#ffffff', bold: false, shadow: { on: true, color: '#ff2bd6', blur: 28, x: 0, y: 0 } } },
+  { n: 'Kino', s: { font: 'Bebas Neue', size: 130, bold: false, letter: 14, shadow: { on: true, color: '#000000', blur: 18, x: 0, y: 4 } } },
+  { n: 'Qradiyent', s: { font: 'Montserrat', size: 110, bold: true, grad: true, color: '#ffb347', color2: '#ff2e63' } },
+  { n: 'Komiks', s: { font: 'Bangers', size: 110, bold: false, color: '#ffd400', letter: 3, stroke: { on: true, color: '#000000', w: 10 }, shadow: { on: true, color: '#000000', blur: 0, x: 7, y: 7 } } },
+  { n: 'Əl yazısı', s: { font: 'Dancing Script', size: 100, bold: false, shadow: { on: true, color: '#000000', blur: 12, x: 2, y: 3 } } },
+  { n: 'Marker', s: { font: 'Permanent Marker', size: 90, bold: false, color: '#ffffff', stroke: { on: true, color: '#7c5cff', w: 8 } } },
+  { n: 'Zərif', s: { font: 'Playfair Display', size: 90, italic: true, color: '#f5e6c8' } },
+  { n: 'Terminal', s: { font: 'Roboto Mono', size: 60, bold: false, color: '#22d3c5', bg: { on: true, color: '#000000', opacity: .75, pad: 16, radius: 8 } } },
+  { n: 'Retro', s: { font: 'Lobster', size: 100, bold: false, color: '#ffcc00', stroke: { on: true, color: '#ff3d00', w: 6 }, shadow: { on: true, color: '#7a1f00', blur: 0, x: 6, y: 6 } } },
+  { n: 'Buz', s: { font: 'Oswald', size: 100, bold: true, grad: true, color: '#e0f7ff', color2: '#3aa0ff', stroke: { on: true, color: '#06243d', w: 5 } } },
+  { n: 'Başlıq', s: { font: 'Poppins', size: 120, bold: true, color: '#ffffff', shadow: { on: true, color: '#000000', blur: 30, x: 0, y: 8 } } },
+];
+const STICKERS = {
+  'Üz': '😀 😂 🤣 😍 🥰 😎 🤩 😜 🤔 😱 😭 😡 🥳 😴 🤯 🙄 😇 🤫 🥺 😈 💀 👻 🤖 👽',
+  'Əl': '👍 👎 👏 🙌 🙏 💪 ✌️ 🤞 👌 🤙 👋 ✋ 👉 👈 👆 👇 🫶 🤝',
+  'Simvol': '❤️ 💔 💯 🔥 ✨ ⭐ 🌟 💥 💫 ⚡ 💢 💤 ❗ ❓ ✅ ❌ ⚠️ 🔔 🎵 🎶 💬 💭 🗯 👀',
+  'Əyləncə': '🎉 🎊 🎁 🎈 🏆 🥇 🎮 🎬 📸 🎤 🎧 🚀 💎 👑 💰 🍕 🍔 ☕ 🌈 🌸 🌙 ☀️ 🌊 ⚽',
+  'Ox': '⬆️ ⬇️ ⬅️ ➡️ ↗️ ↘️ ↙️ ↖️ 🔄 🔁 ▶️ ⏸ ⏹ ⏺',
+};
+const SHAPES = [
+  { id: 'rect', n: 'Düzbucaq', ic: '▬' }, { id: 'round', n: 'Oval küncli', ic: '▢' }, { id: 'circle', n: 'Dairə', ic: '●' },
+  { id: 'line', n: 'Xətt', ic: '─' }, { id: 'heart', n: 'Ürək', ic: '♥' }, { id: 'star', n: 'Ulduz', ic: '★' },
+  { id: 'arrow', n: 'Ox', ic: '➜' }, { id: 'frame', n: 'Çərçivə', ic: '▭' },
+];
+
+/* ---------------- Vəziyyət ---------------- */
+function newProject() {
+  return {
+    v: 1, name: 'Layihəm', ratio: '16:9', w: 1920, h: 1080,
+    bg: { type: 'color', color: '#000000', color2: '#3b1d7a', blur: .6 },
+    tracks: [{ id: uid(), kind: 'main', clips: [], hidden: false, muted: false, locked: false }],
+    markers: []
+  };
+}
+let P = newProject();
+const media = {};           // id -> media obyekti
+const S = {
+  sel: null, T: 0, playing: false, pps: 40, magnet: true, snap: true, dirty: true,
+  pq: .5, exporting: false, clipboard: null, leftTab: 'media', propTab: null, kfRefresh: 0,
+};
+
+/* ---------------- Köməkçilər (model) ---------------- */
+const VISUAL_KINDS = ['video', 'image', 'text', 'sticker', 'shape'];
+function allClips() { const r = []; for (const t of P.tracks) for (const c of t.clips) r.push(c); return r; }
+function findClip(id) { for (const t of P.tracks) for (const c of t.clips) if (c.id === id) return c; return null; }
+function trackOf(clip) { return P.tracks.find(t => t.clips.includes(clip)); }
+function getTrack(id) { return P.tracks.find(t => t.id === id); }
+function mainTrack() { return P.tracks.find(t => t.kind === 'main'); }
+function selClip() { return S.sel ? findClip(S.sel) : null; }
+function projDur() { let d = 0; for (const c of allClips()) d = Math.max(d, c.start + c.dur); return d; }
+function clipEnd(c) { return c.start + c.dur; }
+function isVisual(c) { return VISUAL_KINDS.includes(c.kind); }
+function hasAudio(c) { return (c.kind === 'video' || c.kind === 'audio'); }
+function sortTrack(t) { t.clips.sort((a, b) => a.start - b.start); }
+function trackAccepts(t, c) {
+  if (t.kind === 'main') return c.kind === 'video' || c.kind === 'image';
+  if (t.kind === 'visual') return isVisual(c);
+  if (t.kind === 'fx') return c.kind === 'fx' || c.kind === 'filter';
+  if (t.kind === 'audio') return c.kind === 'audio';
+  return false;
+}
+function kindForClip(c) { return isVisual(c) ? 'visual' : (c.kind === 'audio' ? 'audio' : 'fx'); }
+function overlaps(t, c, ignore) {
+  for (const o of t.clips) { if (o === c || o === ignore) continue; if (c.start < o.start + o.dur - 1e-3 && c.start + c.dur > o.start + 1e-3) return true; }
+  return false;
+}
+function newTrack(kind, afterTrack) {
+  const t = { id: uid(), kind, clips: [], hidden: false, muted: false, locked: false };
+  if (kind === 'audio') { P.tracks.push(t); return t; }
+  // vizual treklər: audio-dan əvvəl, verilmiş trekin üstünə
+  let idx;
+  if (afterTrack) idx = P.tracks.indexOf(afterTrack) + 1;
+  else { idx = P.tracks.findIndex(x => x.kind === 'audio'); if (idx < 0) idx = P.tracks.length; }
+  P.tracks.splice(idx, 0, t);
+  return t;
+}
+function cleanTracks() { P.tracks = P.tracks.filter(t => t.kind === 'main' || t.clips.length); }
+function repackMain() {
+  const m = mainTrack(); if (!m) return; sortTrack(m);
+  if (!S.magnet) return;
+  let x = 0; for (const c of m.clips) { c.start = x; x += c.dur; }
+}
+/** Klipi uyğun trekə yerləşdir (lazım olsa yeni trek yarat) */
+function placeClip(c, pref) {
+  let t = pref && trackAccepts(pref, c) ? pref : null;
+  if (!t) {
+    if (c.kind === 'video' || c.kind === 'image') t = mainTrack();
+    else t = P.tracks.find(x => x.kind === kindForClip(c) && !overlaps(x, c));
+  }
+  if (t && t.kind === 'main' && S.magnet) {
+    // ən yaxın sərhədə daxil et
+    sortTrack(t);
+    let idx = t.clips.length;
+    for (let i = 0; i < t.clips.length; i++) { const o = t.clips[i]; if (c.start < o.start + o.dur / 2) { idx = i; break; } }
+    t.clips.splice(idx, 0, c); repackMain(); return t;
+  }
+  if (!t || overlaps(t, c)) {
+    const kind = t && t.kind === 'main' ? 'visual' : kindForClip(c);
+    t = P.tracks.find(x => x.kind === kind && !overlaps(x, c)) || newTrack(kind, t && t.kind !== 'audio' ? t : null);
+  }
+  t.clips.push(c); sortTrack(t); return t;
+}
+
+/* ---------- Klip yaradıcıları ---------- */
+function baseVisual() {
+  return {
+    x: .5, y: .5, scale: 1, rot: 0, opacity: 1, flipH: false, flipV: false, blend: 'source-over', fit: 'fit',
+    crop: { l: 0, t: 0, r: 0, b: 0 }, filter: { id: 'none', amt: 1 }, adj: {},
+    chroma: { on: false, color: '#00ff00', sim: .4, smooth: .08, spill: .1 },
+    mask: { type: 'none', x: .5, y: .5, size: .6, feather: 0, invert: false, round: 0, rot: 0 },
+    animIn: { type: 'none', dur: .5 }, animOut: { type: 'none', dur: .5 }, animLoop: { type: 'none', speed: 1 },
+    kf: {}, trans: null
+  };
+}
+function makeMediaClip(m, start) {
+  if (m.type === 'audio') return {
+    id: uid(), kind: 'audio', mediaId: m.id, name: m.name, start, in: 0, dur: m.duration || 5, speed: 1, curve: null,
+    volume: 1, fadeIn: 0, fadeOut: 0, keepPitch: true, kf: {}
+  };
+  const c = Object.assign(baseVisual(), { id: uid(), kind: m.type, mediaId: m.id, name: m.name, start, in: 0 });
+  if (m.type === 'video') Object.assign(c, { dur: m.duration || 5, speed: 1, curve: null, volume: 1, fadeIn: 0, fadeOut: 0, muted: false, keepPitch: true });
+  else c.dur = 4;
+  return c;
+}
+function makeTextClip(start, style, content) {
+  const c = Object.assign(baseVisual(), { id: uid(), kind: 'text', name: 'Mətn', start, dur: 3 });
+  c.text = Object.assign(clone(DEFAULT_TEXT), clone(style || {}));
+  if (content != null) c.text.content = content;
+  return c;
+}
+function makeSticker(start, emoji) {
+  const c = Object.assign(baseVisual(), { id: uid(), kind: 'sticker', name: emoji, start, dur: 3 });
+  c.text = Object.assign(clone(DEFAULT_TEXT), { content: emoji, font: 'system-ui', size: 220, bold: false });
+  return c;
+}
+function makeShape(start, type) {
+  const c = Object.assign(baseVisual(), { id: uid(), kind: 'shape', name: 'Forma', start, dur: 3 });
+  c.shape = { type, color: '#ffffff', color2: '#22d3c5', grad: false, w: type === 'line' ? 600 : 400, h: type === 'line' ? 12 : (type === 'rect' || type === 'round' || type === 'frame' ? 240 : 400), radius: 40, stroke: 12, opacity: 1 };
+  return c;
+}
+function makeFx(start, id) {
+  const e = EFFECTS.find(x => x.id === id);
+  return { id: uid(), kind: 'fx', name: e.n, start, dur: 3, fx: { id, amt: .8, speed: 1 } };
+}
+function makeFilterClip(start, fid) {
+  const f = FILTERS.find(x => x.id === fid);
+  return { id: uid(), kind: 'filter', name: f.n, start, dur: 5, filter: { id: fid, amt: 1 }, adj: {} };
+}
+
+/* ---------- Sürət əyrisi (speed ramp) ---------- */
+function curveAt(pts, p) {
+  if (!pts) return 1;
+  const n = pts.length - 1, x = clamp(p, 0, 1) * n, i = Math.min(n - 1, Math.floor(x)), f = x - i;
+  return lerp(pts[i], pts[i + 1], ease(f));
+}
+function curveAvg(pts) { if (!pts) return 1; let s = 0; const N = 200; for (let i = 0; i < N; i++) s += curveAt(pts, (i + .5) / N); return s / N; }
+function curveInt(pts, p) { if (!pts) return p; let s = 0; const N = Math.max(4, Math.ceil(p * 200)); for (let i = 0; i < N; i++) s += curveAt(pts, (i + .5) / N * p); return s / N * p; }
+/** klipin daxili vaxtına görə mənbə ofseti (saniyə) */
+function srcOffset(c, lt) {
+  const sp = c.speed || 1;
+  if (!c.curve) return lt * sp;
+  const p = clamp(lt / c.dur, 0, 1);
+  return curveInt(c.curve, p) * c.dur * sp;
+}
+function srcLen(c) { return (c.speed || 1) * c.dur * curveAvg(c.curve); }
+function rateAt(c, lt) { return (c.speed || 1) * curveAt(c.curve, lt / c.dur); }
+
+/* ---------- Keyframe ---------- */
+const KF_PROPS = ['x', 'y', 'scale', 'rot', 'opacity', 'volume'];
+function evalProp(c, prop, lt) {
+  const k = c.kf && c.kf[prop];
+  if (!k || !k.length) return c[prop];
+  if (lt <= k[0].t) return k[0].v;
+  if (lt >= k[k.length - 1].t) return k[k.length - 1].v;
+  for (let i = 0; i < k.length - 1; i++) {
+    if (lt >= k[i].t && lt <= k[i + 1].t) { const f = (lt - k[i].t) / Math.max(1e-6, k[i + 1].t - k[i].t); return lerp(k[i].v, k[i + 1].v, ease(f)); }
+  }
+  return c[prop];
+}
+function kfAt(c, prop, lt) { const k = c.kf && c.kf[prop]; if (!k) return -1; return k.findIndex(x => Math.abs(x.t - lt) < 1 / 30); }
+/** Xassəni dəyiş — keyframe varsa playhead-də keyframe yarat/yenilə */
+function setProp(c, prop, v) {
+  const lt = clamp(S.T - c.start, 0, c.dur);
+  const k = c.kf && c.kf[prop];
+  if (k && k.length) {
+    const i = kfAt(c, prop, lt);
+    if (i >= 0) k[i].v = v; else { k.push({ t: lt, v }); k.sort((a, b) => a.t - b.t); }
+  } else c[prop] = v;
+}
+function toggleKf(c, prop) {
+  c.kf = c.kf || {};
+  const lt = clamp(S.T - c.start, 0, c.dur);
+  const k = c.kf[prop] || (c.kf[prop] = []);
+  const i = kfAt(c, prop, lt);
+  if (i >= 0) { const v = k[i].v; k.splice(i, 1); if (!k.length) { delete c.kf[prop]; c[prop] = v; } }
+  else { k.push({ t: lt, v: evalProp(c, prop, lt) }); k.sort((a, b) => a.t - b.t); }
+}
+
+/* ---------- Tarixçə (Undo/Redo) ---------- */
+const H = { stack: [], idx: -1 };
+function snapshot() { return JSON.stringify(P); }
+function commit(label) {
+  const s = snapshot();
+  if (H.stack[H.idx] === s) return;
+  H.stack = H.stack.slice(0, H.idx + 1); H.stack.push(s);
+  if (H.stack.length > 100) H.stack.shift();
+  H.idx = H.stack.length - 1;
+  updateUndoBtns(); scheduleSave(); S.dirty = true;
+}
+function undo() { if (H.idx <= 0) return; H.idx--; P = JSON.parse(H.stack[H.idx]); afterHistory(); toast('Geri alındı'); }
+function redo() { if (H.idx >= H.stack.length - 1) return; H.idx++; P = JSON.parse(H.stack[H.idx]); afterHistory(); toast('İrəli'); }
+function afterHistory() { if (S.sel && !findClip(S.sel)) S.sel = null; updateUndoBtns(); scheduleSave(); applyRatio(false); refreshAll(); }
+function updateUndoBtns() { $('#undoBtn').disabled = H.idx <= 0; $('#redoBtn').disabled = H.idx >= H.stack.length - 1; }
+
+/* =========================================================
+   MEDIA: idxal, miniatürlər, dalğa forması, ritm
+   ========================================================= */
+function once(el, ev, ms = 4000) {
+  return new Promise(res => {
+    let done = false; const f = () => { if (done) return; done = true; el.removeEventListener(ev, f); res(true); };
+    el.addEventListener(ev, f); setTimeout(() => { if (!done) { done = true; el.removeEventListener(ev, f); res(false); } }, ms);
+  });
+}
+function mediaTypeOf(f) {
+  const t = f.type || '';
+  if (t.startsWith('video')) return 'video';
+  if (t.startsWith('audio')) return 'audio';
+  if (t.startsWith('image')) return 'image';
+  const ext = (f.name.split('.').pop() || '').toLowerCase();
+  if (['mp4', 'mov', 'webm', 'mkv', 'avi', 'm4v', '3gp'].includes(ext)) return 'video';
+  if (['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus', 'weba'].includes(ext)) return 'audio';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif'].includes(ext)) return 'image';
+  return null;
+}
+async function importFiles(files, opts = {}) {
+  const added = [];
+  for (const f of files) {
+    const type = mediaTypeOf(f);
+    if (!type) { toast('Dəstəklənməyən fayl: ' + f.name); continue; }
+    const m = { id: uid(), name: f.name || 'media', type, blob: f, url: URL.createObjectURL(f), duration: 0, w: 0, h: 0, thumbs: [], peaks: null, beats: null };
+    media[m.id] = m;
+    await probeMedia(m);
+    if (m.error) { toast('Fayl açılmadı: ' + f.name); delete media[m.id]; continue; }
+    added.push(m);
+    renderLeft();
+    postProcessMedia(m);
+  }
+  if (added.length && opts.addToTimeline) {
+    for (const m of added) addMediaToTimeline(m, true);
+  }
+  return added;
+}
+async function probeMedia(m) {
+  if (m.type === 'image') {
+    const img = new Image(); img.src = m.url;
+    try { await img.decode(); } catch (e) { m.error = true; return; }
+    m.img = img; m.w = img.naturalWidth || 1080; m.h = img.naturalHeight || 1080; m.duration = 0;
+    return;
+  }
+  await new Promise(res => {
+    const v = document.createElement(m.type === 'audio' ? 'audio' : 'video');
+    v.preload = 'metadata'; v.muted = true; v.src = m.url;
+    let done = false;
+    const fin = () => { if (done) return; done = true; m.w = v.videoWidth || 0; m.h = v.videoHeight || 0; if (isFinite(v.duration) && v.duration > 0 && !m.duration) m.duration = v.duration; v.removeAttribute('src'); v.load(); res(); };
+    v.onloadedmetadata = () => {
+      if (!isFinite(v.duration)) { // MediaRecorder webm faylları
+        v.ondurationchange = () => { if (isFinite(v.duration)) { m.duration = v.duration; fin(); } };
+        v.currentTime = 1e9; setTimeout(fin, 4000);
+      } else { m.duration = v.duration; if (m.type === 'video' && !v.videoWidth) setTimeout(fin, 300); else fin(); }
+    };
+    v.onerror = () => { m.error = true; fin(); };
+    setTimeout(fin, 20000);
+  });
+  if (m.type === 'video' && !m.w) { m.w = 1280; m.h = 720; }
+}
+async function postProcessMedia(m) {
+  if (m.type === 'video' && !(m.thumbs && m.thumbs.length)) await genThumbs(m);
+  if (m.type === 'image' && !(m.thumbs && m.thumbs.length)) {
+    const c = document.createElement('canvas'); const th = 60; c.height = th; c.width = Math.max(20, Math.round(th * m.w / m.h));
+    c.getContext('2d').drawImage(m.img, 0, 0, c.width, c.height); m.thumbs = [{ t: 0, url: c.toDataURL('image/jpeg', .7) }];
+  }
+  if ((m.type === 'video' || m.type === 'audio') && !m.peaks) await genPeaks(m);
+  renderLeft(); refreshTimeline(); DB.saveMedia(m);
+}
+async function genThumbs(m) {
+  const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.src = m.url; v.playsInline = true;
+  if (!(await once(v, 'loadeddata', 8000))) return;
+  const n = clamp(Math.ceil(m.duration / 1.5), 1, 40), th = 60, tw = Math.max(20, Math.round(th * (m.w / m.h || 16 / 9)));
+  const c = document.createElement('canvas'); c.width = tw; c.height = th; const g = c.getContext('2d');
+  m.thumbs = [];
+  for (let i = 0; i < n; i++) {
+    const t = Math.min(m.duration - .05, (i + .5) * m.duration / n);
+    v.currentTime = Math.max(0, t); await once(v, 'seeked', 3000);
+    g.drawImage(v, 0, 0, tw, th); m.thumbs.push({ t, url: c.toDataURL('image/jpeg', .6) });
+    if (i === 0) renderLeft();
+    if (i % 5 === 4) refreshTimeline();
+  }
+  v.removeAttribute('src'); v.load();
+}
+async function genPeaks(m) {
+  if (m.blob.size > 450e6) return;
+  try {
+    const buf = await m.blob.arrayBuffer();
+    const oac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+    const ab = await new Promise((res, rej) => { const p = oac.decodeAudioData(buf, res, rej); if (p && p.then) p.then(res, rej); });
+    const rate = 100, n = Math.ceil(ab.duration * rate), pk = new Float32Array(n), step = ab.sampleRate / rate;
+    for (let ch = 0; ch < ab.numberOfChannels; ch++) {
+      const d = ab.getChannelData(ch);
+      for (let i = 0; i < n; i++) {
+        let mx = 0; const a = Math.floor(i * step), b = Math.min(d.length, Math.floor((i + 1) * step));
+        for (let j = a; j < b; j += 3) { const v = d[j] < 0 ? -d[j] : d[j]; if (v > mx) mx = v; }
+        if (mx > pk[i]) pk[i] = mx;
+      }
+    }
+    m.peaks = pk; m.hasAudio = pk.some(v => v > .002);
+    if (!m.duration) m.duration = ab.duration;
+  } catch (e) { m.peaks = null; if (m.type === 'video') m.hasAudio = false; }
+}
+function detectBeats(m) {
+  const pk = m.peaks; if (!pk) return [];
+  const rate = 100, n = pk.length, e = new Float32Array(n);
+  for (let i = 1; i < n; i++) e[i] = Math.max(0, pk[i] - pk[i - 1] * .9);
+  const beats = []; let last = -100;
+  for (let i = 2; i < n - 2; i++) {
+    let s = 0, cnt = 0; for (let j = Math.max(0, i - 40); j < Math.min(n, i + 40); j++) { s += e[j]; cnt++; }
+    const avg = s / cnt;
+    if (e[i] > avg * 2.2 && e[i] > .05 && e[i] >= e[i - 1] && e[i] >= e[i + 1] && i - last > 22) { beats.push(i / rate); last = i; }
+  }
+  return beats;
+}
+
+/* =========================================================
+   SƏS: WebAudio marşrutlaşdırma
+   ========================================================= */
+let AC = null, master = null, streamDest = null;
+const els = new Map(); // clipId -> {el, mediaId, node, gain, pending}
+function ensureAudio() {
+  if (!AC) {
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.connect(AC.destination);
+      streamDest = AC.createMediaStreamDestination(); master.connect(streamDest);
+      for (const v of els.values()) connectEl(v);
+    } catch (e) { AC = null; }
+  }
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+function connectEl(v) {
+  if (!AC || v.node) return;
+  try { v.node = AC.createMediaElementSource(v.el); v.gain = AC.createGain(); v.gain.gain.value = 0; v.node.connect(v.gain); v.gain.connect(master); } catch (e) { }
+}
+function getEl(c) {
+  let v = els.get(c.id);
+  const m = media[c.mediaId];
+  if (!m) return null;
+  if (v && v.mediaId === c.mediaId) return v;
+  if (v) dropEl(c.id);
+  const el = document.createElement(m.type === 'audio' ? 'audio' : 'video');
+  el.preload = 'auto'; el.playsInline = true; el.src = m.url; el.muted = false; el.volume = 0;
+  v = { el, mediaId: c.mediaId, node: null, gain: null, pending: null };
+  el.addEventListener('seeked', () => {
+    if (v.pending != null) { const p = v.pending; v.pending = null; if (Math.abs(el.currentTime - p) > .02) el.currentTime = p; }
+    S.dirty = true;
+  });
+  el.addEventListener('loadeddata', () => { S.dirty = true; });
+  els.set(c.id, v); connectEl(v);
+  return v;
+}
+function dropEl(id) {
+  const v = els.get(id); if (!v) return;
+  try { v.el.pause(); if (v.node) v.node.disconnect(); if (v.gain) v.gain.disconnect(); v.el.removeAttribute('src'); v.el.load(); } catch (e) { }
+  els.delete(id);
+}
+function setGain(v, g) {
+  if (v.gain) { if (v.el.volume !== 1) v.el.volume = 1; v.gain.gain.setTargetAtTime(g, AC.currentTime, .015); }
+  else { v.el.volume = clamp(g, 0, 1); }
+}
+function seekEl(v, target) {
+  const el = v.el;
+  if (el.seeking) { v.pending = target; return; }
+  if (Math.abs(el.currentTime - target) > .03) el.currentTime = target;
+}
+let lastClean = 0;
+function sync(t, playing) {
+  const now = performance.now();
+  if (now - lastClean > 1500) { lastClean = now; const ids = new Set(allClips().map(c => c.id)); for (const id of els.keys()) if (!ids.has(id)) dropEl(id); }
+  for (const tr of P.tracks) {
+    for (const c of tr.clips) {
+      if (!hasAudio(c)) continue;
+      const m = media[c.mediaId]; if (!m) continue;
+      const pre = (c.trans ? c.trans.dur : 0) + (playing ? .8 : .05);
+      const inWin = t >= c.start - pre && t < c.start + c.dur;
+      if (!inWin) { const v = els.get(c.id); if (v) { if (!v.el.paused) v.el.pause(); setGain(v, 0); } continue; }
+      const v = getEl(c); if (!v) continue;
+      const lt = t - c.start;
+      const target = clamp(c.in + srcOffset(c, Math.max(0, lt)), 0, Math.max(0, (m.duration || 1e9) - .02));
+      const el = v.el;
+      if (playing && lt >= 0) {
+        const r = clamp(rateAt(c, lt), .0625, 16);
+        if (Math.abs(el.playbackRate - r) > .001) el.playbackRate = r;
+        if ('preservesPitch' in el) el.preservesPitch = c.keepPitch !== false;
+        if (el.paused) { if (Math.abs(el.currentTime - target) > .05) el.currentTime = target; el.play().catch(() => { }); }
+        else if (Math.abs(el.currentTime - target) > .35 && !el.seeking) el.currentTime = target;
+        let g = evalProp(c, 'volume', lt);
+        if (c.fadeIn > 0) g *= clamp(lt / c.fadeIn, 0, 1);
+        if (c.fadeOut > 0) g *= clamp((c.dur - lt) / c.fadeOut, 0, 1);
+        if (c.muted || tr.muted || (tr.kind !== 'audio' && tr.hidden)) g = 0;
+        setGain(v, g);
+      } else {
+        if (!el.paused) el.pause();
+        setGain(v, 0);
+        seekEl(v, target);
+      }
+    }
+  }
+}
+
+/* =========================================================
+   WebGL effekt boru xətti (filtr, rəng tənzimləmə, xroma, effektlər)
+   ========================================================= */
+const FX = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 2;
+  let gl = null;
+  try { gl = c.getContext('webgl', { premultipliedAlpha: true, preserveDrawingBuffer: true, alpha: true, antialias: false }); } catch (e) { }
+  if (!gl) return { ok: false, run: () => null };
+  const vs = `attribute vec2 p;varying vec2 q;void main(){q=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}`;
+  const fs = `precision mediump float;
+varying vec2 q;uniform sampler2D tx;uniform vec2 res,off,scl;uniform float time;
+uniform float exposure,brightness,contrast,saturation,temp,tint,hue,highlights,shadows,fade,sharpen,vignette,grain,blur,sepia,split,invert;
+uniform vec3 splitS,splitH;uniform float key,keySim,keySmooth,keySpill;uniform vec3 keyColor;
+uniform float rgb,glitch,pixel,vhs,scan,edge;
+float rnd(vec2 c){return fract(sin(dot(c,vec2(12.9898,78.233)))*43758.5453);}
+vec4 S(vec2 u){return texture2D(tx,off+clamp(u,0.,1.)*scl);}
+vec2 UV(vec3 c){return vec2(c.r*-.169+c.g*-.331+c.b*.5+.5,c.r*.5+c.g*-.419+c.b*-.081+.5);}
+float L(vec3 c){return dot(c,vec3(.299,.587,.114));}
+void main(){
+ vec2 u=q;
+ if(pixel>0.){vec2 px=vec2(max(2.,pixel*48.))/res;u=(floor(u/px)+.5)*px;}
+ if(glitch>0.){float row=floor(u.y*28.);float tt=floor(time*14.);float n=rnd(vec2(row,tt));if(n>1.-glitch*.45)u.x+=(rnd(vec2(row+1.,tt))-.5)*glitch*.25;
+   float blk=rnd(vec2(floor(u.y*6.),tt+3.));if(blk>1.-glitch*.15)u.y+=(rnd(vec2(tt,2.))-.5)*.05*glitch;}
+ if(vhs>0.){u.x+=sin(u.y*90.+time*12.)*.0018*vhs+(rnd(vec2(floor(u.y*240.),floor(time*30.)))-.5)*.005*vhs;
+   float band=fract(time*.15);if(abs(u.y-band)<.02)u.x+=.01*vhs;}
+ vec4 c;
+ if(blur>0.){vec4 a=vec4(0.);float r=blur*.035*res.y;for(int i=0;i<36;i++){float fi=float(i);float rr=sqrt((fi+.5)/36.)*r;float th=fi*2.39996;a+=S(u+vec2(cos(th),sin(th))*rr/res);}c=a/36.;}
+ else c=S(u);
+ if(rgb>0.){float o=rgb*.012;c.r=S(u+vec2(o,0.)).r;c.b=S(u-vec2(o,o*.3)).b;}
+ if(sharpen>0.){vec2 px=1./res;vec4 n=S(u+vec2(px.x,0.))+S(u-vec2(px.x,0.))+S(u+vec2(0.,px.y))+S(u-vec2(0.,px.y));c.rgb+=(c.rgb*4.-n.rgb)*sharpen*.8;}
+ if(edge>0.){vec2 px=1.5/res;float tl=L(S(u+vec2(-px.x,-px.y)).rgb),t=L(S(u+vec2(0.,-px.y)).rgb),tr=L(S(u+vec2(px.x,-px.y)).rgb),l=L(S(u+vec2(-px.x,0.)).rgb),r=L(S(u+vec2(px.x,0.)).rgb),bl=L(S(u+vec2(-px.x,px.y)).rgb),b=L(S(u+vec2(0.,px.y)).rgb),br=L(S(u+vec2(px.x,px.y)).rgb);
+   float gx=-tl-2.*l-bl+tr+2.*r+br,gy=-tl-2.*t-tr+bl+2.*b+br;float e=clamp(length(vec2(gx,gy))*2.,0.,1.);
+   vec3 nc=vec3(.5+.5*sin(time*2.+u.x*6.),.5+.5*sin(time*2.+2.1+u.y*6.),.5+.5*sin(time*2.+4.2));c.rgb=mix(c.rgb,c.rgb*.15+nc*e*1.6,edge);}
+ if(key>0.){float d=distance(UV(c.rgb),UV(keyColor));float bm=d-keySim*.5;float fm=pow(clamp(bm/max(keySmooth*.5,.001),0.,1.),1.5);c.a*=fm;
+   float sv=pow(clamp(bm/max(keySpill*.5,.001),0.,1.),1.5);float ds=L(c.rgb);c.rgb=mix(vec3(ds),c.rgb,sv);}
+ c.rgb*=pow(2.,exposure);
+ c.rgb+=brightness*.25;
+ c.rgb=(c.rgb-.5)*(1.+contrast)+.5;
+ float l=L(c.rgb);
+ c.rgb+=shadows*.3*(1.-smoothstep(0.,.55,l));
+ c.rgb+=highlights*.3*smoothstep(.45,1.,l);
+ c.r+=temp*.11;c.b-=temp*.11;c.g-=tint*.08;c.r+=tint*.03;c.b+=tint*.03;
+ l=L(c.rgb);c.rgb=mix(vec3(l),c.rgb,1.+saturation);
+ if(hue!=0.){mat3 a=mat3(.299,.596,.211,.587,-.274,-.523,.114,-.322,.312);mat3 b=mat3(1.,1.,1.,.956,-.272,-1.106,.621,-.647,1.703);vec3 y=a*c.rgb;float h=hue*3.14159;float co=cos(h),si=sin(h);y.yz=vec2(y.y*co-y.z*si,y.y*si+y.z*co);c.rgb=b*y;}
+ if(sepia>0.){vec3 sp=vec3(dot(c.rgb,vec3(.393,.769,.189)),dot(c.rgb,vec3(.349,.686,.168)),dot(c.rgb,vec3(.272,.534,.131)));c.rgb=mix(c.rgb,sp,sepia);}
+ if(split>0.){l=L(c.rgb);c.rgb+=split*((splitS-.5)*.28*(1.-l)+(splitH-.5)*.28*l);}
+ c.rgb=c.rgb*(1.-fade*.35)+fade*.22;
+ c.rgb=mix(c.rgb,1.-c.rgb,invert);
+ if(vignette>0.){float v=smoothstep(.85,.25,length(q-.5)*1.25);c.rgb*=mix(1.,v,vignette);}
+ if(grain>0.){c.rgb+=(rnd(q*res+fract(time*7.3)*100.)-.5)*grain*.28;}
+ if(scan>0.){c.rgb*=1.-scan*.22*step(.5,fract(q.y*res.y/3.));}
+ c=clamp(c,0.,1.);
+ gl_FragColor=vec4(c.rgb*c.a,c.a);
+}`;
+  function sh(t, s) { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o; }
+  const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(pr)); return { ok: false, run: () => null }; }
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const ap = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  const names = ['exposure', 'brightness', 'contrast', 'saturation', 'temp', 'tint', 'hue', 'highlights', 'shadows', 'fade', 'sharpen', 'vignette', 'grain', 'blur', 'sepia', 'split', 'invert', 'key', 'keySim', 'keySmooth', 'keySpill', 'rgb', 'glitch', 'pixel', 'vhs', 'scan', 'edge', 'time'];
+  const U = {}; for (const n of names) U[n] = gl.getUniformLocation(pr, n);
+  for (const n of ['res', 'off', 'scl', 'splitS', 'splitH', 'keyColor']) U[n] = gl.getUniformLocation(pr, n);
+  gl.uniform1i(gl.getUniformLocation(pr, 'tx'), 0);
+  function run(src, u0, v0, uw, vh, w, h, p, time) {
+    w = Math.max(2, Math.round(Math.min(w, 2560))); h = Math.max(2, Math.round(Math.min(h, 2560)));
+    if (c.width !== w) c.width = w; if (c.height !== h) c.height = h;
+    gl.viewport(0, 0, w, h);
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src); } catch (e) { return null; }
+    for (const n of names) gl.uniform1f(U[n], (n === 'time' ? time : p[n]) || 0);
+    gl.uniform2f(U.res, w, h); gl.uniform2f(U.off, u0, v0); gl.uniform2f(U.scl, uw, vh);
+    const sS = p.splitS || [.5, .5, .5], sH = p.splitH || [.5, .5, .5], kc = p.keyColor || [0, 1, 0];
+    gl.uniform3f(U.splitS, sS[0], sS[1], sS[2]); gl.uniform3f(U.splitH, sH[0], sH[1], sH[2]); gl.uniform3f(U.keyColor, kc[0], kc[1], kc[2]);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    return c;
+  }
+  return { ok: true, run };
+})();
+function buildParams(filter, adj, extra) {
+  let p = null;
+  const add = (k, v) => { if (!v) return; p = p || {}; if (Array.isArray(v) || typeof v !== 'number') { p[k] = v; return; } p[k] = (p[k] || 0) + v; };
+  if (filter && filter.id && filter.id !== 'none') {
+    const f = FILTERS.find(x => x.id === filter.id);
+    if (f && f.p) for (const k in f.p) add(k, Array.isArray(f.p[k]) ? f.p[k] : f.p[k] * (filter.amt == null ? 1 : filter.amt));
+  }
+  if (adj) for (const k in adj) add(k, adj[k]);
+  if (extra) for (const k in extra) add(k, extra[k]);
+  return p;
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const cv = $('#cv'); const ctx = cv.getContext('2d');
+let CW = 960, CH = 540;
+function setCanvasSize(w, h) { cv.width = CW = Math.max(2, Math.round(w)); cv.height = CH = Math.max(2, Math.round(h)); S.dirty = true; }
+const layers = [];
+function layer(i) {
+  let l = layers[i];
+  if (!l) { l = document.createElement('canvas'); l.g = l.getContext('2d'); layers[i] = l; }
+  if (l.width !== CW || l.height !== CH) { l.width = CW; l.height = CH; }
+  const g = l.g; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.shadowColor = 'transparent'; g.shadowBlur = 0; g.clearRect(0, 0, CW, CH);
+  return l;
+}
+
+/* ---- Mətn render ---- */
+const textCache = new Map();
+const fontWait = new Set();
+function fontStr(s, px) {
+  const fam = ['system-ui', 'sans-serif', 'serif', 'monospace'].includes(s.font) ? s.font : `"${s.font}"`;
+  return `${s.italic ? 'italic ' : ''}${s.bold ? '800' : '400'} ${px.toFixed(1)}px ${fam}, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+}
+function ensureFont(s) {
+  if (!document.fonts || fontWait.has(s.font + s.bold + s.italic)) return;
+  const f = fontStr(s, 40);
+  try { if (!document.fonts.check(f)) { fontWait.add(s.font + s.bold + s.italic); document.fonts.load(f).then(() => { textCache.clear(); S.dirty = true; }); } } catch (e) { }
+}
+function roundRectPath(g, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function textCanvas(c, k, reveal) {
+  const s = c.text;
+  const key = k.toFixed(3) + '|' + reveal.toFixed(3) + '|' + JSON.stringify(s);
+  const hit = textCache.get(key); if (hit) return hit;
+  ensureFont(s);
+  const fs = Math.max(2, s.size * k);
+  const cvs = document.createElement('canvas'); let g = cvs.getContext('2d');
+  const setup = () => { g.font = fontStr(s, fs); if ('letterSpacing' in g) g.letterSpacing = (s.letter * k).toFixed(1) + 'px'; g.textBaseline = 'middle'; };
+  setup();
+  const lines = String(s.content).split('\n');
+  const widths = lines.map(l => g.measureText(l || ' ').width);
+  const lh = fs * (s.lineH || 1.2), maxW = Math.max(1, ...widths);
+  const st = s.stroke.on ? s.stroke.w * k : 0, shd = s.shadow.on ? (s.shadow.blur * 1.2 + Math.max(Math.abs(s.shadow.x), Math.abs(s.shadow.y))) * k : 0, pad = s.bg.on ? s.bg.pad * k : 0;
+  const m = Math.ceil(st + shd + pad + 4 * k + 2);
+  cvs.width = Math.ceil(maxW + 2 * m); cvs.height = Math.ceil(lines.length * lh + 2 * m);
+  g = cvs.getContext('2d'); setup(); g.lineJoin = 'round';
+  if (s.bg.on) { g.globalAlpha = s.bg.opacity; g.fillStyle = s.bg.color; roundRectPath(g, m - pad, m - pad, maxW + 2 * pad, lines.length * lh + 2 * pad, s.bg.radius * k); g.fill(); g.globalAlpha = 1; }
+  const total = lines.reduce((a, l) => a + Array.from(l).length, 0);
+  let left = Math.round(total * clamp(reveal, 0, 1));
+  const fill = s.grad ? (() => { const gr = g.createLinearGradient(0, m, 0, cvs.height - m); gr.addColorStop(0, s.color); gr.addColorStop(1, s.color2); return gr; })() : s.color;
+  const passes = (s.shadow.on && s.shadow.x === 0 && s.shadow.y === 0) ? 2 : 1;
+  lines.forEach((line, i) => {
+    const chars = Array.from(line); const vis = chars.slice(0, Math.max(0, left)).join(''); left -= chars.length;
+    if (!vis) return;
+    const y = m + lh * (i + .5);
+    let x, al = s.align || 'center';
+    if (al === 'left') x = m; else if (al === 'right') x = cvs.width - m; else x = cvs.width / 2;
+    if (al === 'center' && vis.length < line.length) { x = cvs.width / 2 - widths[i] / 2; al = 'left'; }
+    if (al === 'right' && vis.length < line.length) { x = cvs.width - m - widths[i]; al = 'left'; }
+    g.textAlign = al;
+    if (s.shadow.on) {
+      g.save(); g.shadowColor = s.shadow.color; g.shadowBlur = s.shadow.blur * k; g.shadowOffsetX = s.shadow.x * k; g.shadowOffsetY = s.shadow.y * k;
+      for (let p = 0; p < passes; p++) { if (st) { g.lineWidth = st * 2; g.strokeStyle = s.stroke.color; g.strokeText(vis, x, y); } else { g.fillStyle = fill; g.fillText(vis, x, y); } }
+      g.restore();
+    }
+    if (st) { g.lineWidth = st * 2; g.strokeStyle = s.stroke.color; g.strokeText(vis, x, y); }
+    g.fillStyle = fill; g.fillText(vis, x, y);
+  });
+  if (textCache.size > 120) textCache.clear();
+  textCache.set(key, cvs);
+  return cvs;
+}
+function heartPath(g, cx, cy, s) {
+  g.beginPath(); g.moveTo(cx, cy + s * .35);
+  g.bezierCurveTo(cx - s * .9, cy - s * .25, cx - s * .45, cy - s * .95, cx, cy - s * .45);
+  g.bezierCurveTo(cx + s * .45, cy - s * .95, cx + s * .9, cy - s * .25, cx, cy + s * .35); g.closePath();
+}
+function starPath(g, cx, cy, r, n = 5, inner = .45) {
+  g.beginPath();
+  for (let i = 0; i < n * 2; i++) { const a = -Math.PI / 2 + i * Math.PI / n, rr = i % 2 ? r * inner : r; g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+  g.closePath();
+}
+function shapeCanvas(c, k) {
+  const s = c.shape; const key = 'S' + k.toFixed(3) + JSON.stringify(s);
+  const hit = textCache.get(key); if (hit) return hit;
+  const w = Math.max(2, s.w * k), h = Math.max(2, s.h * k), m = 4;
+  const cvs = document.createElement('canvas'); cvs.width = Math.ceil(w + 2 * m); cvs.height = Math.ceil(h + 2 * m);
+  const g = cvs.getContext('2d');
+  let fill = s.color;
+  if (s.grad) { const gr = g.createLinearGradient(m, m, m + w, m + h); gr.addColorStop(0, s.color); gr.addColorStop(1, s.color2); fill = gr; }
+  g.fillStyle = fill; g.strokeStyle = fill; g.globalAlpha = s.opacity == null ? 1 : s.opacity;
+  const cx = m + w / 2, cy = m + h / 2;
+  switch (s.type) {
+    case 'rect': g.fillRect(m, m, w, h); break;
+    case 'round': roundRectPath(g, m, m, w, h, s.radius * k); g.fill(); break;
+    case 'circle': g.beginPath(); g.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2); g.fill(); break;
+    case 'line': roundRectPath(g, m, m, w, h, h / 2); g.fill(); break;
+    case 'heart': g.save(); g.translate(cx, cy); g.scale(w / Math.max(w, h), h / Math.max(w, h)); heartPath(g, 0, 0, Math.max(w, h) * .58); g.fill(); g.restore(); break;
+    case 'star': g.save(); g.translate(cx, cy); g.scale(w / Math.max(w, h), h / Math.max(w, h)); starPath(g, 0, 0, Math.max(w, h) / 2); g.fill(); g.restore(); break;
+    case 'arrow': g.beginPath(); g.moveTo(m, cy - h * .18); g.lineTo(m + w * .62, cy - h * .18); g.lineTo(m + w * .62, m); g.lineTo(m + w, cy); g.lineTo(m + w * .62, m + h); g.lineTo(m + w * .62, cy + h * .18); g.lineTo(m, cy + h * .18); g.closePath(); g.fill(); break;
+    case 'frame': g.lineWidth = s.stroke * k; roundRectPath(g, m + g.lineWidth / 2, m + g.lineWidth / 2, w - g.lineWidth, h - g.lineWidth, s.radius * k); g.stroke(); break;
+  }
+  if (textCache.size > 120) textCache.clear();
+  textCache.set(key, cvs); return cvs;
+}
+
+/* ---- Animasiyalar ---- */
+function backOut(t) { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+function bounceOut(x) { const n1 = 7.5625, d1 = 2.75; if (x < 1 / d1) return n1 * x * x; if (x < 2 / d1) return n1 * (x -= 1.5 / d1) * x + .75; if (x < 2.5 / d1) return n1 * (x -= 2.25 / d1) * x + .9375; return n1 * (x -= 2.625 / d1) * x + .984375; }
+function applyAnim(r, type, p, isIn) {
+  const e = easeOut(p);
+  switch (type) {
+    case 'fade': r.alpha *= p; break;
+    case 'slideL': r.dx -= (1 - e) * .6; r.alpha *= Math.min(1, p * 2); break;
+    case 'slideR': r.dx += (1 - e) * .6; r.alpha *= Math.min(1, p * 2); break;
+    case 'slideU': r.dy += (1 - e) * .5 * (isIn ? 1 : -1); r.alpha *= Math.min(1, p * 2); break;
+    case 'slideD': r.dy -= (1 - e) * .5 * (isIn ? 1 : -1); r.alpha *= Math.min(1, p * 2); break;
+    case 'zoomIn': if (isIn) r.sc *= lerp(.3, 1, e); else { r.sc *= lerp(1.8, 1, e); r.alpha *= p; } break;
+    case 'zoomOut': if (isIn) { r.sc *= lerp(1.8, 1, e); r.alpha *= p; } else r.sc *= lerp(.3, 1, e); break;
+    case 'pop': r.sc *= Math.max(0, backOut(p)); r.alpha *= Math.min(1, p * 3); break;
+    case 'bounce': r.dy -= (1 - bounceOut(p)) * .6; break;
+    case 'spin': r.rot += (1 - e) * 360 * (isIn ? -1 : 1); r.sc *= lerp(.2, 1, e); r.alpha *= p; break;
+    case 'blur': r.blur += (1 - e) * .5; r.alpha *= Math.min(1, p * 1.5); break;
+    case 'rise': r.dy += (1 - e) * .08; r.alpha *= p; break;
+    case 'type': r.reveal = Math.min(r.reveal, p); break;
+  }
+}
+function animMods(c, lt) {
+  const r = { dx: 0, dy: 0, sc: 1, rot: 0, alpha: 1, blur: 0, reveal: 1 };
+  if (!c.animIn) return r;
+  const ai = c.animIn, ao = c.animOut, al = c.animLoop;
+  const din = Math.min(ai.dur, c.dur), dout = Math.min(ao.dur, c.dur);
+  if (ai.type !== 'none' && lt < din) applyAnim(r, ai.type, clamp(lt / din, 0, 1), true);
+  if (ao.type !== 'none' && lt > c.dur - dout) applyAnim(r, ao.type, clamp((c.dur - lt) / dout, 0, 1), false);
+  if (al && al.type !== 'none') {
+    const tt = lt * (al.speed || 1), TAU = Math.PI * 2;
+    switch (al.type) {
+      case 'pulse': r.sc *= 1 + .06 * Math.sin(tt * TAU); break;
+      case 'float': r.dy += .015 * Math.sin(tt * TAU * .5); break;
+      case 'shake': { const f = Math.floor(tt * 30); r.dx += (rand1(f) - .5) * .012; r.dy += (rand1(f + 99) - .5) * .012; break; }
+      case 'swing': r.rot += 8 * Math.sin(tt * TAU * .7); break;
+      case 'flicker': r.alpha *= rand1(Math.floor(tt * 12)) > .3 ? 1 : .25; break;
+      case 'spin': r.rot += tt * 90; break;
+      case 'heartbeat': r.sc *= 1 + .12 * Math.pow(Math.max(0, Math.sin(tt * TAU)), 12); break;
+      case 'zoom': r.sc *= 1 + .15 * clamp(lt / c.dur, 0, 1) * (al.speed || 1); break;
+    }
+  }
+  return r;
+}
+
+/* ---- Klip həndəsəsi və çəkilməsi ---- */
+function quantK(v) { return clamp(Math.ceil(v * 4) / 4, .25, 6); }
+function prepClip(c, t, W, H) {
+  const lt = clamp(t - c.start, 0, c.dur);
+  const a = animMods(c, lt);
+  const x = evalProp(c, 'x', lt), y = evalProp(c, 'y', lt), sc = evalProp(c, 'scale', lt), rot = evalProp(c, 'rot', lt), op = evalProp(c, 'opacity', lt);
+  const u = Math.min(W, H) / 1080;
+  let src = null, bw, bh;
+  if (c.kind === 'text' || c.kind === 'sticker' || c.kind === 'shape') {
+    const k = u * quantK(Math.abs(sc * a.sc));
+    const el = c.kind === 'shape' ? shapeCanvas(c, k) : textCanvas(c, k, a.reveal);
+    src = { el, w: el.width, h: el.height };
+    bw = el.width / k * u; bh = el.height / k * u;
+  } else {
+    const m = media[c.mediaId]; if (!m) return null;
+    if (c.kind === 'image') { if (!m.img) return null; src = { el: m.img, w: m.w, h: m.h }; }
+    else {
+      const v = els.get(c.id); if (!v || v.el.readyState < 2) return null;
+      src = { el: v.el, w: v.el.videoWidth || m.w, h: v.el.videoHeight || m.h };
+    }
+    const cr = c.crop, cw = src.w * (1 - cr.l - cr.r), ch = src.h * (1 - cr.t - cr.b);
+    const s = c.fit === 'fill' ? Math.max(W / cw, H / ch) : Math.min(W / cw, H / ch);
+    bw = cw * s; bh = ch * s;
+  }
+  return { src, a, lt, cx: (x + a.dx) * W, cy: (y + a.dy) * H, w: bw * sc * a.sc, h: bh * sc * a.sc, rot: rot + a.rot, alpha: clamp(op * a.alpha, 0, 1) };
+}
+/** geometriya (seçim/klik üçün), mənbə hazır olmasa da işləyir */
+function clipGeom(c, t, W, H) {
+  const q = prepClip(c, t, W, H); if (q) return q;
+  const m = media[c.mediaId]; if (!m) return null;
+  const lt = clamp(t - c.start, 0, c.dur), sc = evalProp(c, 'scale', lt);
+  const s = Math.min(W / m.w, H / m.h);
+  return { cx: evalProp(c, 'x', lt) * W, cy: evalProp(c, 'y', lt) * H, w: m.w * s * sc, h: m.h * s * sc, rot: evalProp(c, 'rot', lt), alpha: 1 };
+}
+function drawMaskShape(g, mk, w, h) {
+  const cx = (mk.x - .5) * w, cy = (mk.y - .5) * h, mn = Math.min(w, h), BIG = Math.max(w, h) * 4;
+  const feather = mk.feather * mn * .25;
+  const M = g.getTransform(), D = 20000;
+  if (feather > 0) { g.setTransform(M.a, M.b, M.c, M.d, M.e + D, M.f); g.shadowColor = '#000'; g.shadowBlur = feather; g.shadowOffsetX = -D; }
+  g.fillStyle = '#000';
+  g.save(); g.translate(cx, cy); g.rotate((mk.rot || 0) * Math.PI / 180);
+  switch (mk.type) {
+    case 'line': g.fillRect(-BIG, -BIG, BIG * 2, BIG); break;
+    case 'mirror': g.fillRect(-BIG, -mk.size * h / 2, BIG * 2, mk.size * h); break;
+    case 'circle': g.beginPath(); g.ellipse(0, 0, mk.size * mn / 2, mk.size * mn / 2, 0, 0, Math.PI * 2); g.fill(); break;
+    case 'rect': roundRectPath(g, -mk.size * w / 2, -mk.size * h / 2, mk.size * w, mk.size * h, mk.round * mn * .5); g.fill(); break;
+    case 'heart': heartPath(g, 0, mk.size * mn * .1, mk.size * mn * .62); g.fill(); break;
+    case 'star': starPath(g, 0, 0, mk.size * mn / 2); g.fill(); break;
+  }
+  g.restore();
+  if (feather > 0) { g.setTransform(M); g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetX = 0; }
+}
+function drawClip(g, c, t, W, H, alphaMul = 1) {
+  const q = prepClip(c, t, W, H); if (!q || q.alpha <= 0) return;
+  let el = q.src.el, sw = q.src.w, sh = q.src.h, sx = 0, sy = 0;
+  let u0 = 0, v0 = 0, uw = 1, vh = 1;
+  if (c.crop && (c.kind === 'video' || c.kind === 'image')) {
+    const cr = c.crop; sx = cr.l * sw; sy = cr.t * sh; u0 = cr.l; v0 = cr.t; uw = 1 - cr.l - cr.r; vh = 1 - cr.t - cr.b; sw *= uw; sh *= vh;
+  }
+  let extra = null;
+  if (q.a.blur) extra = { blur: q.a.blur };
+  if (c.chroma && c.chroma.on) extra = Object.assign(extra || {}, { key: 1, keyColor: hexToRgb(c.chroma.color), keySim: c.chroma.sim, keySmooth: c.chroma.smooth, keySpill: c.chroma.spill });
+  const params = buildParams(c.filter, c.adj, extra);
+  if (params && FX.ok) {
+    const aw = Math.abs(q.w), ah = Math.abs(q.h);
+    const f = Math.min(1, sw / Math.max(1, aw), 2048 / Math.max(aw, ah));
+    const pw = aw * f, ph = ah * f;
+    const out = FX.run(el, u0, v0, uw, vh, pw, ph, params, t);
+    if (out) { el = out; sx = 0; sy = 0; sw = out.width; sh = out.height; }
+  }
+  const needMask = c.mask && c.mask.type !== 'none';
+  const tg = needMask ? layer(5).g : g;
+  tg.save();
+  if (!needMask) { tg.globalAlpha = q.alpha * alphaMul; tg.globalCompositeOperation = c.blend || 'source-over'; }
+  tg.translate(q.cx, q.cy); tg.rotate(q.rot * Math.PI / 180); tg.scale(c.flipH ? -1 : 1, c.flipV ? -1 : 1);
+  tg.imageSmoothingQuality = 'high';
+  try { tg.drawImage(el, sx, sy, sw, sh, -q.w / 2, -q.h / 2, q.w, q.h); } catch (e) { }
+  if (needMask) {
+    const ml = layer(6), mg = ml.g; mg.setTransform(tg.getTransform()); drawMaskShape(mg, c.mask, q.w, q.h);
+    tg.setTransform(1, 0, 0, 1, 0, 0); tg.globalCompositeOperation = c.mask.invert ? 'destination-out' : 'destination-in'; tg.drawImage(ml, 0, 0);
+  }
+  tg.restore();
+  if (needMask) { g.save(); g.globalAlpha = q.alpha * alphaMul; g.globalCompositeOperation = c.blend || 'source-over'; g.drawImage(layers[5], 0, 0); g.restore(); }
+}
+
+/* ---- Keçidlər ---- */
+function transDur(a, b) { return Math.max(.05, Math.min(b.trans.dur, a.dur * .9, b.dur * .9)); }
+function drawLayer(g, l, W, H, o = {}) {
+  g.save(); g.globalAlpha = o.alpha == null ? 1 : clamp(o.alpha, 0, 1);
+  g.translate(W / 2 + (o.dx || 0), H / 2 + (o.dy || 0)); if (o.rot) g.rotate(o.rot); const s = o.sc == null ? 1 : o.sc; g.scale(s, s);
+  g.drawImage(l, -W / 2, -H / 2, W, H); g.restore();
+}
+function drawTransition(g, A, B, p, t, W, H) {
+  const la = layer(0), lb = layer(1);
+  drawClip(la.g, A, t, W, H); drawClip(lb.g, B, t, W, H);
+  const e = ease(p), type = B.trans.type;
+  const clipDraw = (pathFn) => { g.save(); g.beginPath(); pathFn(); g.clip(); g.drawImage(lb, 0, 0); g.restore(); };
+  switch (type) {
+    case 'fade': drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { alpha: p }); break;
+    case 'black': case 'white': {
+      drawLayer(g, p < .5 ? la : lb, W, H);
+      g.save(); g.globalAlpha = 1 - Math.abs(p - .5) * 2; g.fillStyle = type === 'black' ? '#000' : '#fff'; g.fillRect(0, 0, W, H); g.restore(); break;
+    }
+    case 'slideL': drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { dx: W * (1 - e) }); break;
+    case 'slideR': drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { dx: -W * (1 - e) }); break;
+    case 'slideU': drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { dy: H * (1 - e) }); break;
+    case 'slideD': drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { dy: -H * (1 - e) }); break;
+    case 'pushL': drawLayer(g, la, W, H, { dx: -W * e }); drawLayer(g, lb, W, H, { dx: W * (1 - e) }); break;
+    case 'pushR': drawLayer(g, la, W, H, { dx: W * e }); drawLayer(g, lb, W, H, { dx: -W * (1 - e) }); break;
+    case 'wipeL': drawLayer(g, la, W, H); clipDraw(() => g.rect(0, 0, W * e, H)); break;
+    case 'wipeR': drawLayer(g, la, W, H); clipDraw(() => g.rect(W * (1 - e), 0, W * e, H)); break;
+    case 'wipeD': drawLayer(g, la, W, H); clipDraw(() => g.rect(0, 0, W, H * e)); break;
+    case 'circle': drawLayer(g, la, W, H); clipDraw(() => g.arc(W / 2, H / 2, Math.hypot(W, H) / 2 * e, 0, Math.PI * 2)); break;
+    case 'heart': drawLayer(g, la, W, H); clipDraw(() => { const s = Math.hypot(W, H) * 1.3 * e; g.moveTo(W / 2, H / 2 + s * .35); g.bezierCurveTo(W / 2 - s * .9, H / 2 - s * .25, W / 2 - s * .45, H / 2 - s * .95, W / 2, H / 2 - s * .45); g.bezierCurveTo(W / 2 + s * .45, H / 2 - s * .95, W / 2 + s * .9, H / 2 - s * .25, W / 2, H / 2 + s * .35); }); break;
+    case 'doors': {
+      drawLayer(g, lb, W, H);
+      const off = W / 2 * e;
+      g.save(); g.beginPath(); g.rect(0, 0, W / 2 - off, H); g.clip(); g.drawImage(la, -off, 0); g.restore();
+      g.save(); g.beginPath(); g.rect(W / 2 + off, 0, W / 2, H); g.clip(); g.drawImage(la, off, 0); g.restore(); break;
+    }
+    case 'zoomIn': drawLayer(g, la, W, H, { sc: 1 + e * .8, alpha: 1 - p }); drawLayer(g, lb, W, H, { sc: lerp(.7, 1, e), alpha: p }); break;
+    case 'zoomOut': drawLayer(g, la, W, H, { sc: lerp(1, .6, e), alpha: 1 - p }); drawLayer(g, lb, W, H, { sc: lerp(1.6, 1, e), alpha: p }); break;
+    case 'spin': drawLayer(g, la, W, H, { rot: e * Math.PI, sc: 1 - e, alpha: 1 - p * .5 }); drawLayer(g, lb, W, H, { rot: (e - 1) * Math.PI, sc: e, alpha: Math.min(1, p * 2) }); break;
+    case 'blur': {
+      const b = Math.sin(p * Math.PI) * .5;
+      for (const [l, al] of [[la, 1], [lb, p]]) {
+        const out = FX.ok && b > .01 ? FX.run(l, 0, 0, 1, 1, W / 3, H / 3, { blur: b }, t) : null;
+        g.save(); g.globalAlpha = al; g.drawImage(out || l, 0, 0, W, H); g.restore();
+      }
+      break;
+    }
+    case 'glitch': {
+      const s = Math.sin(p * Math.PI);
+      const base = p < .5 ? la : lb;
+      const out = FX.ok ? FX.run(base, 0, 0, 1, 1, W, H, { glitch: s, rgb: s * 1.2 }, t) : null;
+      g.drawImage(out || base, 0, 0, W, H); break;
+    }
+    default: drawLayer(g, la, W, H); drawLayer(g, lb, W, H, { alpha: p });
+  }
+}
+
+/* ---- Arxa fon ---- */
+function drawBackground(g, t, W, H) {
+  const b = P.bg;
+  if (b.type === 'gradient') { const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, b.color); gr.addColorStop(1, b.color2); g.fillStyle = gr; }
+  else g.fillStyle = b.type === 'blur' ? '#000' : b.color;
+  g.fillRect(0, 0, W, H);
+  if (b.type === 'blur') {
+    const m = mainTrack(); const c = m && m.clips.find(c => t >= c.start && t < c.start + c.dur);
+    if (!c) return;
+    const q = prepClip(c, t, W, H); if (!q) return;
+    const sw = q.src.w, sh = q.src.h, ar = W / H;
+    let uw = 1, vh = 1; if (sw / sh > ar) uw = (sh * ar) / sw; else vh = (sw / ar) / sh;
+    const out = FX.ok ? FX.run(q.src.el, (1 - uw) / 2, (1 - vh) / 2, uw, vh, Math.max(24, W / 14), Math.max(24, H / 14), { blur: .3 + b.blur * .7, exposure: -.15 }, t) : null;
+    if (out) g.drawImage(out, 0, 0, W, H);
+  }
+}
+
+/* ---- Effekt klipləri (kompozitə tətbiq olunur) ---- */
+function copyCanvas(g) { const l = layer(2); l.g.drawImage(g.canvas, 0, 0); return l; }
+function applyFxClip(g, c, t, W, H) {
+  const e = EFFECTS.find(x => x.id === c.fx.id); if (!e) return;
+  const I = c.fx.amt, sp = c.fx.speed || 1, lt = t - c.start, ts = t * sp, u = Math.min(W, H) / 1080;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  if (e.gl) {
+    const p = {}; for (const k in e.gl) p[k] = e.gl[k] * I;
+    if (e.id === 'oldfilm') p.brightness = (rand1(Math.floor(t * 18)) - .5) * .18 * I;
+    const out = FX.ok ? FX.run(g.canvas, 0, 0, 1, 1, W, H, p, ts) : null;
+    if (out) { g.globalCompositeOperation = 'copy'; g.drawImage(out, 0, 0, W, H); g.globalCompositeOperation = 'source-over'; }
+    if (e.id === 'oldfilm') {
+      g.strokeStyle = 'rgba(30,20,10,.6)'; g.lineWidth = Math.max(1, 1.5 * u);
+      const f = Math.floor(t * 12);
+      for (let i = 0; i < 3; i++) { if (rand1(f * 3 + i) > .5 * I + .3) continue; const x = rand1(f + i * 7) * W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + (rand1(f + i) - .5) * 20 * u, H); g.stroke(); }
+      g.fillStyle = 'rgba(20,10,0,.7)';
+      for (let i = 0; i < 6 * I; i++) { g.beginPath(); g.arc(rand1(f * 9 + i) * W, rand1(f * 5 + i * 3) * H, (1 + rand1(i + f) * 3) * u, 0, 7); g.fill(); }
+    }
+    g.restore(); return;
+  }
+  switch (e.id) {
+    case 'shake': {
+      const l = copyCanvas(g), a = .035 * I;
+      const dx = (Math.sin(ts * 37) * .6 + Math.sin(ts * 61) * .4) * a * W, dy = (Math.sin(ts * 43 + 1) * .6 + Math.sin(ts * 71) * .4) * a * H;
+      g.clearRect(0, 0, W, H); g.translate(W / 2 + dx, H / 2 + dy); g.rotate(Math.sin(ts * 29) * .02 * I); const s = 1 + a * 2.2; g.scale(s, s); g.drawImage(l, -W / 2, -H / 2); break;
+    }
+    case 'zoompulse': case 'zoomin': {
+      const l = copyCanvas(g);
+      const z = e.id === 'zoomin' ? 1 + .35 * I * clamp(lt / c.dur, 0, 1) : 1 + .14 * I * Math.pow(1 - ((lt * sp * 2) % 1), 3);
+      g.clearRect(0, 0, W, H); g.translate(W / 2, H / 2); g.scale(z, z); g.drawImage(l, -W / 2, -H / 2); break;
+    }
+    case 'flash': { const ph = (lt * sp * 1.5) % 1; g.globalAlpha = I * Math.pow(1 - ph, 4); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); break; }
+    case 'strobe': { if (Math.floor(lt * sp * 10) % 2) { g.globalCompositeOperation = 'difference'; g.globalAlpha = I; g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); } break; }
+    case 'letterbox': { const bh = H * .13 * I * easeOut(clamp(lt / .5, 0, 1)) * easeOut(clamp((c.dur - lt) / .5, 0, 1)); g.fillStyle = '#000'; g.fillRect(0, 0, W, bh); g.fillRect(0, H - bh, W, bh); break; }
+    case 'split3': {
+      const l = copyCanvas(g); g.clearRect(0, 0, W, H);
+      if (W >= H) for (let i = 0; i < 3; i++) g.drawImage(l, W / 3, 0, W / 3, H, i * W / 3, 0, W / 3, H);
+      else for (let i = 0; i < 3; i++) g.drawImage(l, 0, H / 3, W, H / 3, 0, i * H / 3, W, H / 3);
+      break;
+    }
+    case 'split4': { const l = copyCanvas(g); g.clearRect(0, 0, W, H); for (let i = 0; i < 4; i++) g.drawImage(l, 0, 0, W, H, (i % 2) * W / 2, Math.floor(i / 2) * H / 2, W / 2, H / 2); break; }
+    case 'mirror': { const l = copyCanvas(g); g.clearRect(0, 0, W, H); g.drawImage(l, 0, 0, W / 2, H, 0, 0, W / 2, H); g.translate(W, 0); g.scale(-1, 1); g.drawImage(l, 0, 0, W / 2, H, 0, 0, W / 2, H); break; }
+    case 'snow': {
+      g.fillStyle = 'rgba(255,255,255,.85)';
+      const n = Math.round(160 * I);
+      for (let i = 0; i < n; i++) { const sp2 = .04 + rand1(i + .3) * .08, x = (rand1(i) + Math.sin(ts * .8 + i) * .02) % 1, y = (rand1(i + .5) + ts * sp2) % 1; g.beginPath(); g.arc(x * W, y * H, (1.2 + rand1(i + .7) * 3.5) * u, 0, 7); g.fill(); }
+      break;
+    }
+    case 'rain': {
+      g.strokeStyle = 'rgba(200,220,255,.55)'; g.lineWidth = 1.6 * u; const n = Math.round(220 * I);
+      for (let i = 0; i < n; i++) { const x = rand1(i) * W * 1.2, y = ((rand1(i + .5) + ts * (1.2 + rand1(i + .2))) % 1) * H * 1.2 - H * .1, l = (25 + rand1(i + 3) * 30) * u; g.beginPath(); g.moveTo(x, y); g.lineTo(x - l * .25, y + l); g.stroke(); }
+      g.fillStyle = 'rgba(20,30,50,.15)'; g.fillRect(0, 0, W, H); break;
+    }
+    case 'confetti': {
+      const cols = ['#ff3ea5', '#22d3c5', '#ffd166', '#7c5cff', '#ff6b35', '#4ade80'], n = Math.round(140 * I);
+      for (let i = 0; i < n; i++) {
+        const y = ((rand1(i + .5) + ts * (.12 + rand1(i + .1) * .15)) % 1.1) - .05, x = rand1(i) + Math.sin(ts * 2 + i) * .03;
+        g.save(); g.translate(x * W, y * H); g.rotate(ts * (2 + rand1(i) * 4) + i); g.scale(1, Math.cos(ts * 5 + i)); g.fillStyle = cols[i % cols.length]; g.fillRect(-6 * u, -3 * u, 12 * u, 6 * u); g.restore();
+      }
+      break;
+    }
+    case 'hearts': {
+      const n = Math.round(30 * I);
+      for (let i = 0; i < n; i++) {
+        const y = 1.1 - ((rand1(i + .5) + ts * (.08 + rand1(i) * .08)) % 1.2), x = rand1(i + 2) + Math.sin(ts * 1.5 + i) * .03, s = (18 + rand1(i + 4) * 30) * u;
+        g.globalAlpha = .85; g.fillStyle = i % 3 ? '#ff4d8d' : '#ff9ec4'; heartPath(g, x * W, y * H, s); g.fill();
+      }
+      break;
+    }
+    case 'sparkle': {
+      g.fillStyle = '#fff'; g.shadowColor = '#fff'; const n = Math.round(45 * I);
+      for (let i = 0; i < n; i++) {
+        const a = Math.pow(Math.max(0, Math.sin(ts * 3 + i * 7.3)), 6); if (a < .02) continue;
+        const r = (8 + rand1(i + 1) * 18) * u * a; g.globalAlpha = a; g.shadowBlur = r * 1.5;
+        starPath(g, rand1(i) * W, rand1(i + .5) * H, r, 4, .18); g.fill();
+      }
+      break;
+    }
+    case 'bokeh': {
+      g.globalCompositeOperation = 'screen'; const n = Math.round(22 * I), cols = ['255,190,120', '255,120,180', '140,200,255', '255,240,170'];
+      for (let i = 0; i < n; i++) {
+        const x = (rand1(i) + Math.sin(ts * .2 + i) * .06) * W, y = (rand1(i + .5) + Math.cos(ts * .17 + i) * .06) * H, r = (40 + rand1(i + 2) * 90) * u;
+        const gr = g.createRadialGradient(x, y, 0, x, y, r); const col = cols[i % 4]; gr.addColorStop(0, `rgba(${col},.45)`); gr.addColorStop(.7, `rgba(${col},.25)`); gr.addColorStop(1, `rgba(${col},0)`);
+        g.globalAlpha = .7 + .3 * Math.sin(ts + i); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+      }
+      break;
+    }
+    case 'leak': {
+      g.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 3; i++) {
+        const x = (.5 + Math.sin(ts * .4 + i * 2) * .5) * W, y = (.5 + Math.cos(ts * .3 + i * 3) * .5) * H, r = Math.max(W, H) * (.5 + .2 * i);
+        const gr = g.createRadialGradient(x, y, 0, x, y, r); const col = ['255,120,40', '255,60,120', '255,200,80'][i];
+        gr.addColorStop(0, `rgba(${col},${.55 * I})`); gr.addColorStop(1, `rgba(${col},0)`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      }
+      break;
+    }
+    case 'rec': {
+      const pad = 40 * u, L = 60 * u; g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 4 * u;
+      g.globalAlpha = I;
+      for (const [x, y, sx, sy] of [[pad, pad, 1, 1], [W - pad, pad, -1, 1], [pad, H - pad, 1, -1], [W - pad, H - pad, -1, -1]]) { g.beginPath(); g.moveTo(x, y + sy * L); g.lineTo(x, y); g.lineTo(x + sx * L, y); g.stroke(); }
+      if (Math.floor(t * 1.6) % 2 === 0) { g.fillStyle = '#ff2d2d'; g.beginPath(); g.arc(pad + 40 * u, pad + 45 * u, 13 * u, 0, 7); g.fill(); }
+      g.fillStyle = '#fff'; g.font = `700 ${34 * u}px "Roboto Mono", monospace`; g.textBaseline = 'middle';
+      g.fillText('REC', pad + 65 * u, pad + 46 * u);
+      g.textAlign = 'right'; g.fillText(fmt(lt), W - pad - 20 * u, pad + 46 * u);
+      g.font = `500 ${24 * u}px "Roboto Mono", monospace`; g.fillText('4K  60FPS', W - pad - 20 * u, H - pad - 40 * u);
+      break;
+    }
+  }
+  g.restore();
+}
+function applyFilterClip(g, c, t, W, H) {
+  const p = buildParams(c.filter, c.adj); if (!p || !FX.ok) return;
+  const out = FX.run(g.canvas, 0, 0, 1, 1, W, H, p, t);
+  if (out) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'copy'; g.drawImage(out, 0, 0, W, H); g.restore(); }
+}
+
+function renderTrack(g, tr, t, W, H) {
+  const cl = tr.clips;
+  for (let i = 0; i < cl.length; i++) {
+    const c = cl[i];
+    if (t >= c.start && t < c.start + c.dur) {
+      const n = cl[i + 1];
+      if (n && n.trans && Math.abs(n.start - (c.start + c.dur)) < .02) {
+        const d = transDur(c, n);
+        if (t >= n.start - d) { drawTransition(g, c, n, (t - (n.start - d)) / d, t, W, H); return; }
+      }
+      drawClip(g, c, t, W, H); return;
+    }
+  }
+}
+function renderFrame(t, g = ctx, W = CW, H = CH) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  drawBackground(g, t, W, H);
+  for (const tr of P.tracks) {
+    if (tr.kind === 'audio' || tr.hidden) continue;
+    if (tr.kind === 'fx') {
+      for (const c of tr.clips) if (t >= c.start && t < c.start + c.dur) { if (c.kind === 'fx') applyFxClip(g, c, t, W, H); else applyFilterClip(g, c, t, W, H); }
+      continue;
+    }
+    renderTrack(g, tr, t, W, H);
+  }
+}
+
+/* =========================================================
+   TAYMLAYN
+   ========================================================= */
+const tscroll = $('#tscroll'), tinner = $('#tinner'), tracksEl = $('#tracks'), theadList = $('#theadList');
+const rulerCv = $('#rulerCv'), rg = rulerCv.getContext('2d');
+function trackH(t) { return t.kind === 'main' ? 66 : t.kind === 'audio' ? 46 : t.kind === 'fx' ? 30 : 42; }
+function displayTracks() { return [...P.tracks.filter(t => t.kind !== 'audio').reverse(), ...P.tracks.filter(t => t.kind === 'audio')]; }
+function trackLabel(t) {
+  if (t.kind === 'main') return '🎬 Əsas';
+  if (t.kind === 'audio') return '🎵 Səs';
+  if (t.kind === 'fx') return t.clips.some(c => c.kind === 'filter') && !t.clips.some(c => c.kind === 'fx') ? '🎨 Filtr' : '✨ Effekt';
+  const k = new Set(t.clips.map(c => c.kind));
+  if (k.size === 1 && k.has('text')) return 'T Mətn';
+  if (k.size === 1 && k.has('sticker')) return '😀 Stiker';
+  return '▣ Örtük';
+}
+let tlQueued = false;
+function refreshTimeline() { if (tlQueued) return; tlQueued = true; requestAnimationFrame(() => { tlQueued = false; renderTimeline(); }); }
+function xToTime(clientX) { const r = tscroll.getBoundingClientRect(); return Math.max(0, (clientX - r.left + tscroll.scrollLeft) / S.pps); }
+function renderTimeline() {
+  const pps = S.pps, dur = projDur();
+  const width = Math.max(tscroll.clientWidth, (dur + 30) * pps);
+  tinner.style.width = width + 'px';
+  tracksEl.innerHTML = ''; theadList.innerHTML = '';
+  for (const tr of displayTracks()) {
+    const h = trackH(tr);
+    const hd = document.createElement('div'); hd.className = 'thead'; hd.style.height = h + 'px';
+    hd.innerHTML = `<span class="nm">${trackLabel(tr)}</span>` +
+      (tr.kind !== 'audio' ? `<button data-a="hide" class="${tr.hidden ? 'off' : ''}" title="Gizlət">${tr.hidden ? '◌' : '👁'}</button>` : '') +
+      (tr.kind === 'main' || tr.kind === 'audio' ? `<button data-a="mute" class="${tr.muted ? 'off' : ''}" title="Səssiz">${tr.muted ? '🔇' : '🔊'}</button>` : '') +
+      `<button data-a="lock" class="${tr.locked ? 'off' : ''}" title="Kilidlə">${tr.locked ? '🔒' : '🔓'}</button>`;
+    hd.querySelectorAll('button').forEach(b => b.onclick = () => {
+      const a = b.dataset.a; if (a === 'hide') tr.hidden = !tr.hidden; if (a === 'mute') tr.muted = !tr.muted; if (a === 'lock') tr.locked = !tr.locked;
+      commit(); refreshTimeline(); S.dirty = true;
+    });
+    theadList.appendChild(hd);
+    const row = document.createElement('div'); row.className = 'track ' + tr.kind; row.style.height = h + 'px'; row.dataset.tid = tr.id;
+    for (const c of tr.clips) row.appendChild(clipEl(c, tr, h));
+    if (tr.kind === 'main' || tr.kind === 'visual') {
+      for (let i = 1; i < tr.clips.length; i++) {
+        const a = tr.clips[i - 1], b = tr.clips[i];
+        if (Math.abs(clipEnd(a) - b.start) > .02 || !(isVisual(a) && isVisual(b))) continue;
+        const tb = document.createElement('div'); tb.className = 'trans' + (b.trans ? ' has' : ''); tb.style.left = b.start * pps + 'px';
+        tb.textContent = b.trans ? (TRANSITIONS.find(x => x.id === b.trans.type) || {}).ic || '⇄' : '⇄';
+        tb.title = b.trans ? 'Keçid: ' + (TRANSITIONS.find(x => x.id === b.trans.type) || {}).n : 'Keçid əlavə et';
+        tb.onpointerdown = e => e.stopPropagation();
+        tb.onclick = e => { e.stopPropagation(); select(b.id); setLeftTab('trans'); };
+        row.appendChild(tb);
+      }
+    }
+    tracksEl.appendChild(row);
+  }
+  const pad = document.createElement('div'); pad.style.height = '60px'; pad.className = 'track-pad'; tracksEl.appendChild(pad);
+  if (!allClips().length) { const e = document.createElement('div'); e.className = 'tl-empty'; e.innerHTML = 'Media faylı əlavə edin və ya buraya sürükləyin'; tracksEl.appendChild(e); }
+  // markerlər
+  $('#ruler').querySelectorAll('.marker').forEach(m => m.remove());
+  P.markers.forEach((mt, i) => {
+    const mk = document.createElement('div'); mk.className = 'marker'; mk.style.left = mt * pps + 'px'; mk.title = 'Marker ' + fmt(mt) + ' (sağ klik: sil)';
+    mk.onpointerdown = e => { e.stopPropagation(); seek(mt); };
+    mk.oncontextmenu = e => { e.preventDefault(); e.stopPropagation(); P.markers.splice(i, 1); commit(); refreshTimeline(); };
+    $('#ruler').appendChild(mk);
+  });
+  syncHeadScroll(); drawRuler(); updatePlayhead();
+  $('#tlInfo').textContent = allClips().length ? 'Müddət: ' + fmt(dur) : '';
+}
+function clipEl(c, tr, h) {
+  const pps = S.pps, w = Math.max(3, c.dur * pps);
+  const d = document.createElement('div');
+  d.className = 'clip ' + c.kind + (c.id === S.sel ? ' sel' : '');
+  d.style.left = c.start * pps + 'px'; d.style.width = w + 'px'; d.dataset.cid = c.id;
+  const m = media[c.mediaId];
+  if ((c.kind === 'video' || c.kind === 'image') && m && m.thumbs && m.thumbs.length) {
+    const th = document.createElement('div'); th.className = 'thumbs';
+    const tileW = Math.max(24, (h - 6) * (m.w / m.h || 1.77)), n = Math.min(160, Math.ceil(w / tileW));
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      let url = m.thumbs[0].url;
+      if (c.kind === 'video') {
+        const st = c.in + srcOffset(c, Math.min(c.dur, (i + .5) * tileW / pps));
+        let best = m.thumbs[0]; for (const t of m.thumbs) if (Math.abs(t.t - st) < Math.abs(best.t - st)) best = t; url = best.url;
+      }
+      html += `<div style="width:${tileW}px;background-image:url(${url})"></div>`;
+    }
+    th.innerHTML = html; d.appendChild(th);
+  }
+  if (c.kind === 'audio' && m && m.peaks) {
+    const wc = document.createElement('canvas'); wc.className = 'wave';
+    const cw = Math.min(6000, Math.ceil(w)), ch = h - 6; wc.width = cw; wc.height = ch; wc.style.width = cw + 'px';
+    const g = wc.getContext('2d'); g.fillStyle = 'rgba(255,255,255,.55)';
+    const pk = m.peaks, vol = Math.min(2, c.volume || 1);
+    for (let x = 0; x < cw; x++) {
+      const t0 = c.in + srcOffset(c, x / cw * c.dur), t1 = c.in + srcOffset(c, (x + 1) / cw * c.dur);
+      let mx = 0; for (let i = Math.floor(t0 * 100); i <= Math.ceil(t1 * 100) && i < pk.length; i++) if (pk[i] > mx) mx = pk[i];
+      const bh = Math.max(1, Math.min(1, mx * vol) * (ch - 14)); g.fillRect(x, ch - bh - 1, 1, bh);
+    }
+    d.appendChild(wc);
+    if (m.beats) for (const b of m.beats) {
+      if (b < c.in || b > c.in + srcLen(c)) continue;
+      const lt = (b - c.in) / (c.speed || 1); if (lt > c.dur) continue;
+      const dot = document.createElement('div'); dot.className = 'beat'; dot.style.left = lt * pps + 'px'; d.appendChild(dot);
+    }
+  }
+  let label = c.name || '';
+  if (c.kind === 'text') label = 'T  ' + c.text.content.replace(/\n/g, ' ');
+  if (c.kind === 'sticker') label = c.text.content;
+  if (c.kind === 'shape') label = '◆ ' + (SHAPES.find(s => s.id === c.shape.type) || {}).n;
+  if (c.kind === 'fx') label = '✨ ' + c.name;
+  if (c.kind === 'filter') label = '🎨 ' + c.name;
+  const lb = document.createElement('div'); lb.className = 'cl'; lb.textContent = label; d.appendChild(lb);
+  const badges = [];
+  if (c.speed && c.speed !== 1) badges.push(c.speed.toFixed(2).replace(/\.?0+$/, '') + 'x');
+  if (c.curve) badges.push('〰');
+  if (c.muted) badges.push('🔇');
+  if (c.filter && c.filter.id !== 'none' && c.kind !== 'filter') badges.push('🎨');
+  if (c.chroma && c.chroma.on) badges.push('🟩');
+  if (c.mask && c.mask.type !== 'none') badges.push('◐');
+  if (c.animIn && (c.animIn.type !== 'none' || c.animOut.type !== 'none')) badges.push('▶');
+  if (badges.length) { const b = document.createElement('div'); b.className = 'badge'; b.textContent = badges.join(' '); d.appendChild(b); }
+  if (c.kf) {
+    const ts = new Set(); for (const k in c.kf) for (const f of c.kf[k]) ts.add(f.t.toFixed(3));
+    for (const t of ts) { const k = document.createElement('div'); k.className = 'kfm'; k.style.left = (+t) * pps + 'px'; d.appendChild(k); }
+  }
+  const hl = document.createElement('div'); hl.className = 'hl'; const hr = document.createElement('div'); hr.className = 'hr';
+  d.appendChild(hl); d.appendChild(hr);
+  if (tr.locked) d.style.opacity = .6;
+  return d;
+}
+function drawRuler() {
+  const w = tscroll.clientWidth, dpr = window.devicePixelRatio || 1, sl = tscroll.scrollLeft;
+  rulerCv.width = w * dpr; rulerCv.height = 28 * dpr; rulerCv.style.width = w + 'px'; rulerCv.style.height = '28px'; rulerCv.style.left = sl + 'px';
+  rg.setTransform(dpr, 0, 0, dpr, 0, 0); rg.clearRect(0, 0, w, 28);
+  const pps = S.pps; const steps = [.1, .2, .5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
+  let major = steps.find(s => s * pps >= 80) || 600; const minor = major / (major >= 1 ? 5 : 2);
+  rg.fillStyle = '#8b8f9c'; rg.strokeStyle = '#444855'; rg.font = '10px Inter'; rg.textBaseline = 'top';
+  const t0 = Math.floor(sl / pps / minor) * minor, t1 = (sl + w) / pps;
+  rg.beginPath();
+  for (let t = t0; t <= t1; t += minor) {
+    const x = Math.round(t * pps - sl) + .5, isMaj = Math.abs(t / major - Math.round(t / major)) < 1e-6;
+    rg.moveTo(x, isMaj ? 14 : 21); rg.lineTo(x, 28);
+    if (isMaj) rg.fillText(major < 1 ? fmt(t).slice(1) : fmt(t, true), x + 3, 3);
+  }
+  rg.stroke();
+}
+function updatePlayhead() {
+  $('#playhead').style.left = S.T * S.pps + 'px';
+  $('#timecode').innerHTML = `${fmt(S.T)} <span>/ ${fmt(projDur())}</span>`;
+}
+function syncHeadScroll() { theadList.style.transform = `translateY(${-tscroll.scrollTop}px)`; }
+tscroll.addEventListener('scroll', () => { syncHeadScroll(); drawRuler(); });
+function setZoom(pps, anchorClientX) {
+  const r = tscroll.getBoundingClientRect();
+  const ax = anchorClientX == null ? (S.T * S.pps - tscroll.scrollLeft) : anchorClientX - r.left;
+  const at = (tscroll.scrollLeft + ax) / S.pps;
+  S.pps = clamp(pps, 4, 700);
+  $('#zoom').value = Math.round(Math.log2(S.pps / 4) / Math.log2(700 / 4) * 100);
+  renderTimeline();
+  tscroll.scrollLeft = at * S.pps - ax;
+}
+$('#zoom').addEventListener('input', e => setZoom(4 * Math.pow(700 / 4, e.target.value / 100)));
+$('#zoomFit').onclick = () => { const d = projDur() || 10; setZoom((tscroll.clientWidth - 40) / d); tscroll.scrollLeft = 0; };
+tscroll.addEventListener('wheel', e => {
+  if (e.ctrlKey || e.metaKey) { e.preventDefault(); setZoom(S.pps * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX); }
+  else if (e.shiftKey) { e.preventDefault(); tscroll.scrollLeft += e.deltaY; }
+}, { passive: false });
+
+/* ---- Playhead / ruler sürüşdürmə ---- */
+function seek(t) { S.T = clamp(t, 0, Math.max(projDur(), 0)); if (S.playing) { clock.p0 = performance.now(); clock.t0 = S.T; } S.dirty = true; updatePlayhead(); }
+function startScrub(e) {
+  const wasPlaying = S.playing; if (wasPlaying) pause();
+  const mv = ev => { seek(snapScrub(xToTime(ev.clientX))); };
+  mv(e);
+  const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); $('#snapline').style.display = 'none'; refreshProps(true); };
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+}
+function snapScrub(t) {
+  if (!S.snap) return t;
+  const pts = snapPoints(null).filter(p => p !== S.T); const s = nearest(t, pts);
+  showSnap(s); return s == null ? t : s;
+}
+$('#ruler').addEventListener('pointerdown', e => { if (e.button !== 0) return; startScrub(e); });
+
+/* ---- Yapışma (snap) ---- */
+function snapPoints(excl) {
+  const pts = [0, S.T, ...P.markers];
+  for (const c of allClips()) {
+    if (c === excl) continue; pts.push(c.start, clipEnd(c));
+    const m = media[c.mediaId];
+    if (c.kind === 'audio' && m && m.beats) for (const b of m.beats) { const lt = (b - c.in) / (c.speed || 1); if (lt >= 0 && lt <= c.dur) pts.push(c.start + lt); }
+  }
+  return pts;
+}
+function nearest(t, pts) { const th = 9 / S.pps; let best = null, bd = th; for (const p of pts) { const d = Math.abs(p - t); if (d < bd) { bd = d; best = p; } } return best; }
+function showSnap(t) { const s = $('#snapline'); if (t == null) { s.style.display = 'none'; return; } s.style.display = 'block'; s.style.left = t * S.pps + 'px'; }
+function trackAtY(y) {
+  for (const row of tracksEl.querySelectorAll('.track')) { const r = row.getBoundingClientRect(); if (y >= r.top && y < r.bottom) return getTrack(row.dataset.tid); }
+  return null;
+}
+
+/* ---- Klip sürüşdürmə / kəsmə ---- */
+tracksEl.addEventListener('pointerdown', e => {
+  if (e.button === 2) return;
+  const cel = e.target.closest('.clip');
+  if (!cel) { select(null); startScrub(e); return; }
+  const c = findClip(cel.dataset.cid); if (!c) return;
+  const tr = trackOf(c);
+  select(c.id);
+  if (tr.locked) return;
+  if (S.playing) pause();
+  const mode = e.target.classList.contains('hl') ? 'l' : e.target.classList.contains('hr') ? 'r' : 'move';
+  const st = { x: e.clientX, y: e.clientY, start: c.start, in: c.in || 0, dur: c.dur, moved: false, kf: clone(c.kf || {}) };
+  const m = media[c.mediaId];
+  const sorted = tr.clips.slice().sort((a, b) => a.start - b.start), idx = sorted.indexOf(c);
+  const prev = sorted[idx - 1], next = sorted[idx + 1];
+  const freeTrack = !(tr.kind === 'main' && S.magnet);
+  let hoverTrack = null, el = cel;
+  const mv = ev => {
+    const dxp = ev.clientX - st.x;
+    if (!st.moved && Math.abs(dxp) < 3 && Math.abs(ev.clientY - st.y) < 3) return;
+    st.moved = true;
+    let dt = dxp / S.pps, snapAt = null;
+    const pts = S.snap ? snapPoints(c) : [];
+    if (mode === 'move') {
+      let ns = Math.max(0, st.start + dt);
+      if (S.snap) {
+        const a = nearest(ns, pts), b = nearest(ns + c.dur, pts);
+        if (a != null && (b == null || Math.abs(a - ns) <= Math.abs(b - ns - c.dur))) { ns = a; snapAt = a; }
+        else if (b != null) { ns = b - c.dur; snapAt = b; }
+      }
+      c.start = Math.max(0, ns);
+      el.style.left = c.start * S.pps + 'px'; el.style.zIndex = 9; el.style.opacity = .85;
+      hoverTrack = trackAtY(ev.clientY);
+      tracksEl.querySelectorAll('.track').forEach(r => r.classList.toggle('droptarget', hoverTrack && r.dataset.tid === hoverTrack.id && hoverTrack !== tr && trackAccepts(hoverTrack, c)));
+      el.style.transform = hoverTrack && hoverTrack !== tr && trackAccepts(hoverTrack, c) ? `translateY(${ev.clientY - st.y}px)` : '';
+    } else if (mode === 'l') {
+      let minD = -st.dur + .1, maxD = st.dur - .1; // dt aralığı
+      if (c.kind === 'video' || c.kind === 'audio') minD = Math.max(minD, -st.in / ((c.speed || 1) * curveAvg(c.curve)));
+      minD = Math.max(minD, -st.start);
+      if (freeTrack && prev) minD = Math.max(minD, clipEnd(prev) - st.start);
+      let d = clamp(dt, minD, maxD);
+      if (S.snap) { const s = nearest(st.start + d, pts); if (s != null && s - st.start >= minD && s - st.start <= maxD) { d = s - st.start; snapAt = s; } }
+      c.in = st.in + d * (c.speed || 1) * curveAvg(c.curve); c.dur = st.dur - d;
+      if (freeTrack) c.start = st.start + d;
+      if (c.in != null && !(c.kind === 'video' || c.kind === 'audio')) c.in = 0;
+      if (c.kf) for (const k in st.kf) c.kf[k] = st.kf[k].map(f => ({ t: f.t - d, v: f.v }));
+      if (!freeTrack) { repackMain(); renderTimeline(); el = tracksEl.querySelector(`[data-cid="${c.id}"]`); }
+      else { el.style.left = c.start * S.pps + 'px'; el.style.width = c.dur * S.pps + 'px'; }
+      seek(c.start);
+    } else {
+      let maxDur = Infinity;
+      if ((c.kind === 'video' || c.kind === 'audio') && m && m.duration) maxDur = (m.duration - (c.in || 0)) / ((c.speed || 1) * curveAvg(c.curve));
+      if (freeTrack && next) maxDur = Math.min(maxDur, next.start - c.start);
+      let nd = clamp(st.dur + dt, .1, maxDur);
+      if (S.snap) { const s = nearest(c.start + nd, pts); if (s != null && s - c.start >= .1 && s - c.start <= maxDur) { nd = s - c.start; snapAt = s; } }
+      c.dur = nd;
+      if (!freeTrack) { repackMain(); renderTimeline(); el = tracksEl.querySelector(`[data-cid="${c.id}"]`); }
+      else el.style.width = c.dur * S.pps + 'px';
+      seek(c.start + c.dur - 1 / 30);
+    }
+    showSnap(snapAt); S.dirty = true;
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+    showSnap(null);
+    if (!st.moved) return;
+    if (mode === 'move') {
+      const target = hoverTrack && trackAccepts(hoverTrack, c) ? hoverTrack : tr;
+      tr.clips.splice(tr.clips.indexOf(c), 1);
+      if (target.kind === 'main' && S.magnet) {
+        const mt = target; sortTrack(mt);
+        let ix = mt.clips.length; for (let i = 0; i < mt.clips.length; i++) { const o = mt.clips[i]; if (c.start < o.start + o.dur / 2) { ix = i; break; } }
+        mt.clips.splice(ix, 0, c);
+      } else {
+        target.clips.push(c); sortTrack(target);
+        if (overlaps(target, c)) {
+          target.clips.splice(target.clips.indexOf(c), 1);
+          const kind = target.kind === 'main' ? 'visual' : target.kind;
+          const alt = P.tracks.find(x => x.kind === kind && x !== target && !overlaps(x, c)) || newTrack(kind, target.kind !== 'audio' ? target : null);
+          alt.clips.push(c); sortTrack(alt);
+        }
+      }
+      repackMain();
+      validateTrans();
+    } else repackMain();
+    cleanTracks(); commit(); refreshAll();
+  };
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+});
+function validateTrans() {
+  for (const t of P.tracks) { sortTrack(t); }
+}
+tracksEl.addEventListener('contextmenu', e => {
+  const cel = e.target.closest('.clip'); if (!cel) return;
+  e.preventDefault(); select(cel.dataset.cid);
+  const c = findClip(cel.dataset.cid);
+  showCtx(e.clientX, e.clientY, [
+    ['✂ Böl', 'S', splitSel], ['⧉ Dublikat', 'Ctrl+D', duplicateSel], ['📋 Kopyala', 'Ctrl+C', copySel], ['📥 Yapışdır', 'Ctrl+V', pasteClip],
+    c.kind === 'video' ? ['❄ Kadrı dondur', '', freezeFrame] : null,
+    c.kind === 'video' ? ['🎵 Səsi ayır', '', detachAudio] : null,
+    c.kind === 'audio' ? ['🥁 Ritmləri tap', '', () => beatSel()] : null,
+    ['🗑 Sil', 'Del', deleteSel],
+  ].filter(Boolean));
+});
+function showCtx(x, y, items) {
+  const m = $('#ctx'); m.innerHTML = '';
+  for (const [n, k, fn] of items) { const b = document.createElement('button'); b.innerHTML = `${n}<span>${k}</span>`; b.onclick = () => { hideCtx(); fn(); }; m.appendChild(b); }
+  m.style.display = 'block';
+  m.style.left = Math.min(x, innerWidth - m.offsetWidth - 8) + 'px'; m.style.top = Math.min(y, innerHeight - m.offsetHeight - 8) + 'px';
+}
+function hideCtx() { $('#ctx').style.display = 'none'; }
+window.addEventListener('pointerdown', e => { if (!e.target.closest('#ctx')) hideCtx(); });
+
+/* ---- Media-nı taymlayna sürüşdürmək (DnD) ---- */
+tscroll.addEventListener('dragover', e => {
+  if (!e.dataTransfer.types.includes('text/kadr')) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+  const tr = trackAtY(e.clientY);
+  tracksEl.querySelectorAll('.track').forEach(r => r.classList.toggle('droptarget', tr && r.dataset.tid === tr.id));
+});
+tscroll.addEventListener('dragleave', () => tracksEl.querySelectorAll('.track').forEach(r => r.classList.remove('droptarget')));
+tscroll.addEventListener('drop', e => {
+  const raw = e.dataTransfer.getData('text/kadr'); if (!raw) return;
+  e.preventDefault(); e.stopPropagation();
+  tracksEl.querySelectorAll('.track').forEach(r => r.classList.remove('droptarget'));
+  const spec = JSON.parse(raw), t = xToTime(e.clientX), tr = trackAtY(e.clientY);
+  const c = makeItem(spec, t); if (!c) return;
+  placeClip(c, tr && trackAccepts(tr, c) ? tr : null);
+  commit(); select(c.id); refreshAll();
+});
+
+/* =========================================================
+   SOL PANEL (Media, Səs, Mətn, Stiker, Effekt, Filtr, Keçid)
+   ========================================================= */
+const LEFT_TABS = [['media', '📁', 'Media'], ['audio', '🎵', 'Səs'], ['text', 'T', 'Mətn'], ['sticker', '😀', 'Stiker'], ['fx', '✨', 'Effekt'], ['filter', '🎨', 'Filtr'], ['trans', '⇄', 'Keçid']];
+function setLeftTab(t) { S.leftTab = t; renderLeft(); }
+function renderTabs() {
+  $('#tabs').innerHTML = LEFT_TABS.map(([id, ic, n]) => `<button data-t="${id}" class="${S.leftTab === id ? 'active' : ''}"><span class="ic">${ic}</span>${n}</button>`).join('');
+  $$('#tabs button').forEach(b => b.onclick = () => setLeftTab(b.dataset.t));
+}
+function dragSpec(elm, spec) {
+  elm.draggable = true;
+  elm.addEventListener('dragstart', e => { e.dataTransfer.setData('text/kadr', JSON.stringify(spec)); e.dataTransfer.effectAllowed = 'copy'; });
+}
+function makeItem(spec, t) {
+  switch (spec.t) {
+    case 'media': { const m = media[spec.id]; return m ? makeMediaClip(m, t) : null; }
+    case 'text': return makeTextClip(t, spec.style, spec.content);
+    case 'sticker': return makeSticker(t, spec.id);
+    case 'shape': return makeShape(t, spec.id);
+    case 'fx': return makeFx(t, spec.id);
+    case 'filter': return makeFilterClip(t, spec.id);
+  }
+  return null;
+}
+function addItem(spec, append) {
+  const c = makeItem(spec, S.T); if (!c) return;
+  if (c.kind === 'video' || c.kind === 'image') { const mt = mainTrack(); if (!mt.clips.length) c.start = 0; else if (append) c.start = projDurOf(mt) + 1; }
+  else if (append) c.start = P.tracks.filter(t => t.kind === kindForClip(c)).reduce((a, t) => Math.max(a, projDurOf(t)), 0);
+  placeClip(c); commit(); select(c.id); refreshAll();
+  return c;
+}
+function addMediaToTimeline(m, append) { return addItem({ t: 'media', id: m.id }, append); }
+function projDurOf(t) { return t.clips.reduce((a, c) => Math.max(a, clipEnd(c)), 0); }
+function renderLeft() {
+  renderTabs();
+  const p = $('#panel'); p.innerHTML = '';
+  const t = S.leftTab;
+  if (t === 'media') panelMedia(p);
+  else if (t === 'audio') panelAudio(p);
+  else if (t === 'text') panelText(p);
+  else if (t === 'sticker') panelSticker(p);
+  else if (t === 'fx') panelFx(p);
+  else if (t === 'filter') panelFilter(p);
+  else if (t === 'trans') panelTrans(p);
+}
+function mediaCard(m) {
+  const d = document.createElement('div'); d.className = 'card';
+  const th = m.thumbs && m.thumbs[0] ? `<img src="${m.thumbs[Math.floor(m.thumbs.length / 3)].url}">` : `<div class="fxprev">${m.type === 'video' ? '🎬' : m.type === 'image' ? '🖼' : '🎵'}</div>`;
+  d.innerHTML = `${th}${m.duration ? `<span class="dur">${fmt(m.duration, true)}</span>` : ''}<div class="lbl">${esc(m.name)}</div><button class="add" title="Taymlayna əlavə et">+</button>`;
+  d.querySelector('.add').onclick = e => { e.stopPropagation(); addMediaToTimeline(m); };
+  d.ondblclick = () => addMediaToTimeline(m);
+  d.oncontextmenu = e => {
+    e.preventDefault();
+    showCtx(e.clientX, e.clientY, [['＋ Taymlayna əlavə et', '', () => addMediaToTimeline(m)], ['🗑 Medianı sil', '', () => removeMedia(m.id)]]);
+  };
+  dragSpec(d, { t: 'media', id: m.id });
+  return d;
+}
+function removeMedia(id) {
+  const used = allClips().filter(c => c.mediaId === id);
+  if (used.length && !confirm(`Bu media ${used.length} klipdə istifadə olunur. Kliplərlə birlikdə silinsin?`)) return;
+  for (const t of P.tracks) t.clips = t.clips.filter(c => c.mediaId !== id);
+  cleanTracks(); repackMain();
+  delete media[id]; DB.del('media', id);
+  if (S.sel && !findClip(S.sel)) S.sel = null;
+  commit(); refreshAll();
+}
+function panelMedia(p) {
+  p.innerHTML = `<div class="ptitle">Media <button id="impBtn">＋ İdxal</button></div>
+  <div class="drop" id="dropZone">📥 Video, şəkil və ya səs faylı seçin<br><small>və ya bura sürükləyin</small></div>
+  <div class="sub">Layihə mediası</div><div class="grid" id="mgrid"></div>
+  <div class="sub">Rəngli fon klipi</div><div class="grid sm" id="cgrid"></div>
+  <div class="sub">İpucu</div><div class="hint">Kartı taymlayna sürükləyin və ya <b>+</b> düyməsini basın. Video əsas trekə, şəkillər isə əsas və ya örtük (PIP) trekinə əlavə oluna bilər. Örtük yaratmaq üçün klipi əsas trekin yuxarısına sürükləyin.</div>`;
+  $('#impBtn').onclick = () => $('#fileIn').click();
+  const dz = $('#dropZone'); dz.onclick = () => $('#fileIn').click();
+  const list = Object.values(media).filter(m => m.type !== 'audio');
+  const g = $('#mgrid');
+  if (!list.length) g.innerHTML = '<div class="hint" style="grid-column:1/-1">Hələ media yoxdur.</div>';
+  for (const m of list) g.appendChild(mediaCard(m));
+  const cols = ['#000000', '#ffffff', '#111827', '#ef4444', '#f97316', '#facc15', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', 'grad1', 'grad2', 'grad3'];
+  const cg = $('#cgrid');
+  for (const c of cols) {
+    const d = document.createElement('div'); d.className = 'card tall';
+    const bg = c === 'grad1' ? 'linear-gradient(135deg,#ff7a18,#af002d)' : c === 'grad2' ? 'linear-gradient(135deg,#22d3c5,#7c5cff)' : c === 'grad3' ? 'linear-gradient(135deg,#0f172a,#334155)' : c;
+    d.style.background = bg; d.title = 'Rəngli fon klipi əlavə et';
+    d.onclick = () => addColorClip(c);
+    cg.appendChild(d);
+  }
+}
+async function addColorClip(c) {
+  const cvs = document.createElement('canvas'); const [w, h] = [P.w, P.h]; cvs.width = w; cvs.height = h; const g = cvs.getContext('2d');
+  const grads = { grad1: ['#ff7a18', '#af002d'], grad2: ['#22d3c5', '#7c5cff'], grad3: ['#0f172a', '#334155'] };
+  if (grads[c]) { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, grads[c][0]); gr.addColorStop(1, grads[c][1]); g.fillStyle = gr; } else g.fillStyle = c;
+  g.fillRect(0, 0, w, h);
+  const blob = await new Promise(r => cvs.toBlob(r, 'image/png'));
+  const f = new File([blob], 'Fon ' + c + '.png', { type: 'image/png' });
+  const [m] = await importFiles([f]); if (m) addMediaToTimeline(m);
+}
+function panelAudio(p) {
+  p.innerHTML = `<div class="ptitle">Səs <button id="impA">＋ İdxal</button></div>
+  <div class="btnrow"><button id="recBtn">🎙 Səs yaz (voiceover)</button></div>
+  <div id="recState" class="hint" style="margin-top:6px"></div>
+  <div class="sub">Səs faylları</div><div id="alist"></div>
+  <div class="sub">Səs effektləri (generasiya)</div><div class="grid" id="sfx"></div>
+  <div class="sub">İpucu</div><div class="hint">Videodan səsi ayırmaq üçün klipi seçib <b>🎵 Səsi ayır</b> düyməsini basın. Səs klipində <b>Ritmləri tap</b> funksiyası ritm nöqtələrini taymlaynda göstərir və kliplər onlara yapışır.</div>`;
+  $('#impA').onclick = () => $('#fileIn').click();
+  $('#recBtn').onclick = toggleRecord; updateRecUI();
+  const al = $('#alist');
+  const list = Object.values(media).filter(m => m.type === 'audio');
+  if (!list.length) al.innerHTML = '<div class="hint">Hələ səs faylı yoxdur.</div>';
+  for (const m of list) {
+    const r = document.createElement('div'); r.className = 'row'; r.style.cssText = 'background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:grab';
+    r.innerHTML = `<span>🎵</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</span><span class="val">${fmt(m.duration, true)}</span><button style="padding:2px 8px">＋</button>`;
+    r.querySelector('button').onclick = () => addMediaToTimeline(m);
+    r.oncontextmenu = e => { e.preventDefault(); showCtx(e.clientX, e.clientY, [['＋ Əlavə et', '', () => addMediaToTimeline(m)], ['🗑 Sil', '', () => removeMedia(m.id)]]); };
+    dragSpec(r, { t: 'media', id: m.id }); al.appendChild(r);
+  }
+  const sg = $('#sfx');
+  for (const [id, n, ic] of SFX_LIST) {
+    const d = document.createElement('div'); d.className = 'card'; d.innerHTML = `<div class="fxprev">${ic}</div><div class="lbl">${n}</div>`;
+    d.onclick = async () => { const f = await synthSfx(id, n); const [m] = await importFiles([f]); if (m) addMediaToTimeline(m); };
+    sg.appendChild(d);
+  }
+}
+function presetCss(s) {
+  const st = Object.assign(clone(DEFAULT_TEXT), s);
+  let css = `font-family:'${st.font}';font-weight:${st.bold ? 800 : 400};font-style:${st.italic ? 'italic' : 'normal'};font-size:20px;`;
+  css += st.grad ? `background:linear-gradient(${st.color},${st.color2});-webkit-background-clip:text;background-clip:text;color:transparent;` : `color:${st.color};`;
+  if (st.stroke.on) css += `-webkit-text-stroke:${Math.min(3, st.stroke.w / 3)}px ${st.stroke.color};paint-order:stroke fill;`;
+  if (st.shadow.on) css += `text-shadow:${st.shadow.x / 3}px ${st.shadow.y / 3}px ${st.shadow.blur / 3}px ${st.shadow.color};`;
+  if (st.letter) css += `letter-spacing:${st.letter / 4}px;`;
+  const wrap = st.bg.on ? `background:${st.bg.color};padding:2px 8px;border-radius:${st.bg.radius / 3}px;opacity:${st.bg.opacity}` : '';
+  return { css, wrap };
+}
+function panelText(p) {
+  p.innerHTML = `<div class="ptitle">Mətn</div>
+  <div class="btnrow"><button class="primary" id="addTxt">＋ Mətn əlavə et</button></div>
+  <div class="sub">Üslublar <span class="hint" style="text-transform:none;letter-spacing:0">(mətn seçilibsə ona tətbiq olunur)</span></div><div class="grid" id="tpre"></div>
+  <div class="sub">Sürətli subtitrlər</div>
+  <textarea id="subTxt" rows="5" style="width:100%;resize:vertical" placeholder="Hər sətir ayrıca subtitr olacaq...\nSalam, xoş gəlmisiniz!\nBu gün sizə ... göstərəcəyəm"></textarea>
+  <div class="row" style="margin-top:8px"><label>Hər biri (san)</label><input type="number" id="subDur" value="2.5" min="0.3" step="0.1" style="width:70px"><button id="subGo" style="flex:1">Yarat</button></div>
+  <div class="btnrow"><button id="srtBtn">📄 SRT/VTT faylı idxal et</button></div>
+  <div class="hint" style="margin-top:6px">Subtitrlər playhead-dən başlayaraq ayrıca mətn trekinə yerləşdirilir.</div>`;
+  $('#addTxt').onclick = () => addItem({ t: 'text', style: {} });
+  const g = $('#tpre');
+  for (const pr of TEXT_PRESETS) {
+    const d = document.createElement('div'); d.className = 'card'; d.style.background = '#2a2d36';
+    const { css, wrap } = presetCss(pr.s);
+    d.innerHTML = `<span style="${wrap}"><span style="${css}">Aa</span></span><div class="lbl">${pr.n}</div>`;
+    d.onclick = () => {
+      const c = selClip();
+      if (c && c.kind === 'text') { const content = c.text.content; c.text = Object.assign(clone(DEFAULT_TEXT), clone(pr.s), { content }); commit(); refreshAll(); }
+      else addItem({ t: 'text', style: pr.s });
+    };
+    dragSpec(d, { t: 'text', style: pr.s });
+    g.appendChild(d);
+  }
+  $('#subGo').onclick = () => {
+    const lines = $('#subTxt').value.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!lines.length) { toast('Mətn daxil edin'); return; }
+    const d = Math.max(.3, +$('#subDur').value || 2.5);
+    addSubtitles(lines.map((l, i) => ({ start: S.T + i * d, end: S.T + (i + 1) * d, text: l })));
+  };
+  $('#srtBtn').onclick = () => $('#srtIn').click();
+}
+function addSubtitles(items) {
+  const style = TEXT_PRESETS[1].s;
+  const tr = newTrack('visual');
+  for (const it of items) {
+    const c = makeTextClip(it.start, style, it.text); c.dur = Math.max(.2, it.end - it.start); c.y = .85; c.name = 'Subtitr';
+    tr.clips.push(c);
+  }
+  sortTrack(tr); commit(); refreshAll(); toast(items.length + ' subtitr əlavə edildi');
+}
+function parseSRT(txt) {
+  const out = [];
+  const toS = s => { const m = s.trim().match(/(?:(\d+):)?(\d+):(\d+)[,.](\d+)/); if (!m) return 0; return (+m[1] || 0) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4]) / Math.pow(10, m[4].length); };
+  for (const block of txt.replace(/\r/g, '').split(/\n\s*\n/)) {
+    const lines = block.split('\n').filter(l => l.trim() && l.trim() !== 'WEBVTT');
+    const ti = lines.findIndex(l => l.includes('-->')); if (ti < 0) continue;
+    const [a, b] = lines[ti].split('-->');
+    const text = lines.slice(ti + 1).join('\n').replace(/<[^>]+>/g, '');
+    if (text) out.push({ start: toS(a), end: toS(b), text });
+  }
+  return out;
+}
+function panelSticker(p) {
+  p.innerHTML = `<div class="ptitle">Stikerlər</div><div id="stk"></div><div class="sub">Formalar</div><div class="grid sm" id="shp"></div>`;
+  const box = $('#stk');
+  for (const cat in STICKERS) {
+    const h = document.createElement('div'); h.className = 'sub'; h.textContent = cat; box.appendChild(h);
+    const g = document.createElement('div'); g.className = 'grid sm';
+    for (const e of STICKERS[cat].split(' ')) {
+      const d = document.createElement('div'); d.className = 'card emoji'; d.textContent = e;
+      d.onclick = () => addItem({ t: 'sticker', id: e }); dragSpec(d, { t: 'sticker', id: e }); g.appendChild(d);
+    }
+    box.appendChild(g);
+  }
+  const sg = $('#shp');
+  for (const s of SHAPES) {
+    const d = document.createElement('div'); d.className = 'card emoji'; d.innerHTML = `<span title="${s.n}">${s.ic}</span>`;
+    d.onclick = () => addItem({ t: 'shape', id: s.id }); dragSpec(d, { t: 'shape', id: s.id }); sg.appendChild(d);
+  }
+}
+function panelFx(p) {
+  p.innerHTML = `<div class="ptitle">Video effektləri</div><div class="hint" style="margin-bottom:10px">Effekt öz trekinə əlavə olunur və altındakı bütün qatlara tətbiq edilir. Müddətini taymlaynda dəyişin.</div><div class="grid" id="fxg"></div>`;
+  const g = $('#fxg');
+  for (const e of EFFECTS) {
+    const d = document.createElement('div'); d.className = 'card'; d.innerHTML = `<div class="fxprev">${e.ic}</div><div class="lbl">${e.n}</div>`;
+    d.onclick = () => { const c = selClip(); if (c && c.kind === 'fx') { c.fx.id = e.id; c.name = e.n; commit(); refreshAll(); } else addItem({ t: 'fx', id: e.id }); };
+    dragSpec(d, { t: 'fx', id: e.id }); g.appendChild(d);
+  }
+}
+let filterPrev = null;
+function genFilterPreviews() {
+  const w = 128, h = Math.round(128 * CH / CW);
+  const src = document.createElement('canvas'); src.width = w; src.height = h; src.getContext('2d').drawImage(cv, 0, 0, w, h);
+  const out = {};
+  const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; const tg = tmp.getContext('2d');
+  for (const f of FILTERS) {
+    const pr = buildParams({ id: f.id, amt: 1 });
+    if (pr && FX.ok) { const r = FX.run(src, 0, 0, 1, 1, w, h, pr, 0); tg.clearRect(0, 0, w, h); tg.drawImage(r, 0, 0); out[f.id] = tmp.toDataURL('image/jpeg', .75); }
+    else out[f.id] = src.toDataURL('image/jpeg', .75);
+  }
+  return out;
+}
+function filterGrid(box, current, onPick) {
+  if (!filterPrev) filterPrev = genFilterPreviews();
+  const g = document.createElement('div'); g.className = 'grid';
+  for (const f of FILTERS) {
+    const d = document.createElement('div'); d.className = 'card'; if (current === f.id) d.style.borderColor = 'var(--accent)';
+    d.innerHTML = `<img src="${filterPrev[f.id]}"><div class="lbl">${f.n}</div>`;
+    d.onclick = () => onPick(f.id);
+    if (!onPick.noDrag) dragSpec(d, { t: 'filter', id: f.id });
+    g.appendChild(d);
+  }
+  box.appendChild(g);
+}
+function panelFilter(p) {
+  const c = selClip(); const target = c && (c.kind === 'video' || c.kind === 'image') ? c : null;
+  p.innerHTML = `<div class="ptitle">Filtrlər <button id="fRef" title="Önizləməni yenilə">↻</button></div>
+  <div class="hint" style="margin-bottom:10px">${target ? 'Seçilmiş klipə tətbiq olunur. Gücünü sağ paneldə <b>Tənzimlə</b> bölməsində dəyişin.' : 'Klip seçilməyib — filtr ayrıca <b>filtr layı</b> kimi əlavə olunacaq (altındakı hər şeyə təsir edir).'}</div><div id="fbox"></div>`;
+  $('#fRef').onclick = () => { filterPrev = null; renderLeft(); };
+  filterGrid($('#fbox'), target ? target.filter.id : null, id => {
+    const c2 = selClip();
+    if (c2 && (c2.kind === 'video' || c2.kind === 'image')) { c2.filter.id = id; commit(); refreshAll(); }
+    else if (c2 && c2.kind === 'filter') { c2.filter.id = id; c2.name = FILTERS.find(f => f.id === id).n; commit(); refreshAll(); }
+    else if (id !== 'none') addItem({ t: 'filter', id });
+  });
+}
+function cutForTrans() {
+  const c = selClip();
+  const prevAdj = b => { const tr = trackOf(b); if (!tr || tr.kind === 'audio' || tr.kind === 'fx') return null; return tr.clips.find(a => a !== b && Math.abs(clipEnd(a) - b.start) < .02); };
+  if (c && isVisual(c) && prevAdj(c)) return c;
+  const m = mainTrack(); let best = null, bd = Infinity;
+  for (const b of m.clips) if (prevAdj(b)) { const d = Math.abs(b.start - S.T); if (d < bd) { bd = d; best = b; } }
+  return best;
+}
+function panelTrans(p) {
+  const b = cutForTrans();
+  p.innerHTML = `<div class="ptitle">Keçidlər</div>
+  <div class="hint" style="margin-bottom:8px">${b ? `Kəsim nöqtəsi: <b>${fmt(b.start)}</b>. Taymlayndakı <span class="kbd">⇄</span> işarəsinə basaraq başqa kəsimi seçin.` : 'Keçid üçün yan-yana iki klip lazımdır. Klipi <b>✂ Böl</b> ilə bölün və ya iki klip əlavə edin.'}</div>
+  <div class="row"><label>Müddət</label><input type="range" id="trD" min="0.1" max="2.5" step="0.05" value="${b && b.trans ? b.trans.dur : .6}"><span class="val" id="trDv"></span></div>
+  <div class="grid" id="trg"></div>
+  <div class="btnrow" style="margin-top:10px"><button id="trAll">Hamısına tətbiq et</button><button id="trNone">Keçidi sil</button></div>`;
+  const dI = $('#trD'), dv = $('#trDv'); dv.textContent = (+dI.value).toFixed(2) + 's';
+  dI.oninput = () => { dv.textContent = (+dI.value).toFixed(2) + 's'; if (b && b.trans) { b.trans.dur = +dI.value; S.dirty = true; } };
+  dI.onchange = () => { if (b && b.trans) commit(); };
+  const g = $('#trg');
+  for (const tr of TRANSITIONS) {
+    const d = document.createElement('div'); d.className = 'card'; if (b && b.trans && b.trans.type === tr.id) d.style.borderColor = 'var(--accent)';
+    d.innerHTML = `<div class="fxprev">${tr.ic}</div><div class="lbl">${tr.n}</div>`;
+    d.onclick = () => {
+      const bb = cutForTrans(); if (!bb) { toast('Kəsim nöqtəsi tapılmadı'); return; }
+      bb.trans = { type: tr.id, dur: +dI.value }; commit(); S.sel = bb.id; refreshAll();
+      seek(Math.max(0, bb.start - transDur(trackOf(bb).clips.find(a => Math.abs(clipEnd(a) - bb.start) < .02), bb) - .3)); play();
+    };
+    g.appendChild(d);
+  }
+  $('#trAll').onclick = () => {
+    const type = b && b.trans ? b.trans.type : 'fade'; let n = 0;
+    for (const tr of P.tracks) { if (tr.kind !== 'main' && tr.kind !== 'visual') continue; for (let i = 1; i < tr.clips.length; i++) if (Math.abs(clipEnd(tr.clips[i - 1]) - tr.clips[i].start) < .02) { tr.clips[i].trans = { type, dur: +dI.value }; n++; } }
+    commit(); refreshAll(); toast(n + ' kəsimə keçid tətbiq edildi');
+  };
+  $('#trNone').onclick = () => { if (b) { b.trans = null; commit(); refreshAll(); } };
+}
+
+/* =========================================================
+   SAĞ PANEL — XASSƏLƏR
+   ========================================================= */
+function propTabsFor(c) {
+  if (!c) return [['project', 'Layihə']];
+  switch (c.kind) {
+    case 'video': return [['basic', 'Əsas'], ['anim', 'Animasiya'], ['speed', 'Sürət'], ['adjust', 'Tənzimlə'], ['mask', 'Maska'], ['chroma', 'Xroma'], ['audio', 'Səs']];
+    case 'image': return [['basic', 'Əsas'], ['anim', 'Animasiya'], ['adjust', 'Tənzimlə'], ['mask', 'Maska'], ['chroma', 'Xroma']];
+    case 'text': return [['text', 'Mətn'], ['basic', 'Əsas'], ['anim', 'Animasiya']];
+    case 'sticker': return [['basic', 'Əsas'], ['anim', 'Animasiya']];
+    case 'shape': return [['shape', 'Forma'], ['basic', 'Əsas'], ['anim', 'Animasiya'], ['mask', 'Maska']];
+    case 'audio': return [['audio', 'Səs'], ['speed', 'Sürət']];
+    case 'fx': return [['fx', 'Effekt']];
+    case 'filter': return [['filter', 'Filtr']];
+  }
+  return [];
+}
+let propsLock = false;
+function refreshProps(soft) {
+  if (soft) { const c = selClip(); if (!c || !c.kf || !Object.keys(c.kf).length) return; }
+  if (propsLock) return;
+  const c = selClip(); const tabs = propTabsFor(c);
+  if (!tabs.find(t => t[0] === S.propTab)) S.propTab = tabs[0] ? tabs[0][0] : null;
+  $('#ptabs').innerHTML = tabs.map(([id, n]) => `<button data-p="${id}" class="${S.propTab === id ? 'active' : ''}">${n}</button>`).join('');
+  $$('#ptabs button').forEach(b => b.onclick = () => { S.propTab = b.dataset.p; refreshProps(); });
+  const box = $('#props'); const st = box.scrollTop; box.innerHTML = '';
+  if (!c) { propsProject(box); return; }
+  const fn = { basic: propsBasic, anim: propsAnim, speed: propsSpeed, adjust: propsAdjust, mask: propsMask, chroma: propsChroma, audio: propsAudio, text: propsText, shape: propsShape, fx: propsFx, filter: propsFilterClip }[S.propTab];
+  if (fn) fn(box, c);
+  box.scrollTop = st;
+}
+/* --- UI köməkçiləri --- */
+function h(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+function sub(box, txt) { box.appendChild(h(`<div class="sub">${txt}</div>`)); }
+function live() { S.dirty = true; }
+function done() { commit(); refreshTimeline(); }
+function range(box, label, get, set, min, max, step, f = v => (+v).toFixed(2), o = {}) {
+  const r = h(`<div class="row"><label title="İki dəfə klik: sıfırla">${label}</label><input type="range" min="${min}" max="${max}" step="${step}"><span class="val"></span>${o.kf ? '<button class="kf" title="Keyframe">◆</button>' : ''}</div>`);
+  const inp = r.querySelector('input'), val = r.querySelector('.val');
+  const upd = () => { const v = get(); inp.value = v; val.textContent = f(v); };
+  upd();
+  inp.oninput = () => { set(+inp.value); val.textContent = f(+inp.value); live(); if (o.onLive) o.onLive(); };
+  inp.onchange = () => { done(); if (o.kf) refreshProps(); };
+  if (o.def != null) r.querySelector('label').ondblclick = () => { set(o.def); upd(); live(); done(); };
+  if (o.kf) {
+    const c = o.clip, b = r.querySelector('.kf'), lt = clamp(S.T - c.start, 0, c.dur);
+    const has = c.kf && c.kf[o.kf] && c.kf[o.kf].length; if (has) b.classList.add('has'); if (kfAt(c, o.kf, lt) >= 0) b.classList.add('at');
+    b.onclick = () => { if (S.T < c.start || S.T > clipEnd(c)) { toast('Playhead klipin üzərində olmalıdır'); return; } toggleKf(c, o.kf); done(); refreshProps(); live(); };
+  }
+  box.appendChild(r); return r;
+}
+function chips(box, items, cur, onPick) {
+  const d = document.createElement('div');
+  for (const [id, n] of items) { const s = document.createElement('span'); s.className = 'chip' + (id === cur ? ' active' : ''); s.textContent = n; s.onclick = () => onPick(id); d.appendChild(s); }
+  box.appendChild(d); return d;
+}
+function seg(box, items, cur, onPick) {
+  const d = h('<div class="seg"></div>');
+  for (const [id, n] of items) { const b = document.createElement('button'); b.textContent = n; if (id === cur) b.classList.add('active'); b.onclick = () => onPick(id); d.appendChild(b); }
+  box.appendChild(d); return d;
+}
+function check(box, label, get, set) {
+  const r = h(`<div class="row"><label>${label}</label><input type="checkbox"></div>`);
+  const i = r.querySelector('input'); i.checked = !!get(); i.onchange = () => { set(i.checked); live(); done(); refreshProps(); };
+  box.appendChild(r); return r;
+}
+function color(box, label, get, set, extra) {
+  const r = h(`<div class="row"><label>${label}</label><input type="color"></div>`);
+  const i = r.querySelector('input'); i.value = get(); i.oninput = () => { set(i.value); live(); }; i.onchange = done;
+  if (extra) r.appendChild(extra);
+  box.appendChild(r); return r;
+}
+function buttons(box, list) {
+  const r = h('<div class="btnrow" style="margin-bottom:8px"></div>');
+  for (const [n, fn, t] of list) { const b = document.createElement('button'); b.textContent = n; if (t) b.title = t; b.onclick = fn; r.appendChild(b); }
+  box.appendChild(r); return r;
+}
+const pct = v => Math.round(v * 100) + '%';
+const deg = v => Math.round(v) + '°';
+
+function propsProject(box) {
+  box.innerHTML = `<div class="ptitle">Layihə parametrləri</div>`;
+  sub(box, 'Ekran nisbəti');
+  chips(box, Object.keys(RATIOS).map(k => [k, RATIO_NAMES[k]]), P.ratio, k => { P.ratio = k; applyRatio(true); commit(); refreshProps(); });
+  sub(box, 'Kətan fonu');
+  seg(box, [['color', 'Rəng'], ['gradient', 'Qradiyent'], ['blur', 'Bulanıq']], P.bg.type, v => { P.bg.type = v; live(); done(); refreshProps(); });
+  if (P.bg.type !== 'blur') color(box, 'Rəng 1', () => P.bg.color, v => P.bg.color = v);
+  if (P.bg.type === 'gradient') color(box, 'Rəng 2', () => P.bg.color2, v => P.bg.color2 = v);
+  if (P.bg.type === 'blur') range(box, 'Bulanıqlıq', () => P.bg.blur, v => P.bg.blur = v, 0, 1, .01, pct);
+  box.appendChild(h(`<div class="hint">Fon yalnız klip kətanı tam örtmədikdə görünür (məs. 16:9 videonu 9:16 layihədə istifadə edəndə).</div>`));
+  sub(box, 'Məlumat');
+  const n = allClips().length;
+  box.appendChild(h(`<div class="hint">Ölçü: <b>${P.w}×${P.h}</b><br>Kliplər: <b>${n}</b> · Treklər: <b>${P.tracks.length}</b><br>Müddət: <b>${fmt(projDur())}</b><br>Media: <b>${Object.keys(media).length}</b></div>`));
+  sub(box, 'Başlamaq üçün');
+  box.appendChild(h(`<div class="hint">1. Sol paneldən media idxal edin.<br>2. Taymlaynda klipi seçin — xassələri burada görünəcək.<br>3. <span class="kbd">S</span> ilə bölün, kənarlarını sürükləyərək kəsin.<br>4. Mətn, stiker, effekt, filtr və keçidlər əlavə edin.<br>5. <b>⬇ Eksport</b> ilə MP4/WebM kimi saxlayın.</div>`));
+}
+function propsBasic(box, c) {
+  const lt = clamp(S.T - c.start, 0, c.dur);
+  if (c.kind === 'sticker') {
+    sub(box, 'Stiker');
+    const r = h(`<div class="row"><label>Emoji</label><input type="text" value="${esc(c.text.content)}" style="flex:1"></div>`);
+    r.querySelector('input').oninput = e => { c.text.content = e.target.value; c.name = e.target.value; live(); }; r.querySelector('input').onchange = done;
+    box.appendChild(r);
+  }
+  sub(box, 'Transformasiya');
+  range(box, 'Ölçü', () => evalProp(c, 'scale', lt), v => setProp(c, 'scale', v), .05, 5, .01, pct, { kf: 'scale', clip: c, def: 1 });
+  range(box, 'Mövqe X', () => Math.round((evalProp(c, 'x', lt) - .5) * P.w), v => setProp(c, 'x', v / P.w + .5), -P.w, P.w, 1, v => Math.round(v), { kf: 'x', clip: c, def: 0 });
+  range(box, 'Mövqe Y', () => Math.round((evalProp(c, 'y', lt) - .5) * P.h), v => setProp(c, 'y', v / P.h + .5), -P.h, P.h, 1, v => Math.round(v), { kf: 'y', clip: c, def: 0 });
+  range(box, 'Fırlanma', () => evalProp(c, 'rot', lt), v => setProp(c, 'rot', v), -180, 180, 1, deg, { kf: 'rot', clip: c, def: 0 });
+  range(box, 'Şəffaflıq', () => evalProp(c, 'opacity', lt), v => setProp(c, 'opacity', v), 0, 1, .01, pct, { kf: 'opacity', clip: c, def: 1 });
+  buttons(box, [
+    ['↺ 90°', () => { setProp(c, 'rot', ((evalProp(c, 'rot', lt) - 90 + 540) % 360) - 180); live(); done(); refreshProps(); }],
+    ['↔ Çevir', () => { c.flipH = !c.flipH; live(); done(); }], ['↕ Çevir', () => { c.flipV = !c.flipV; live(); done(); }],
+    ['⌖ Mərkəz', () => { setProp(c, 'x', .5); setProp(c, 'y', .5); live(); done(); refreshProps(); }],
+  ]);
+  buttons(box, [['Transformu sıfırla', () => { Object.assign(c, { x: .5, y: .5, scale: 1, rot: 0, opacity: 1, flipH: false, flipV: false }); for (const k of ['x', 'y', 'scale', 'rot', 'opacity']) if (c.kf) delete c.kf[k]; live(); done(); refreshProps(); }]]);
+  if (c.kind === 'video' || c.kind === 'image') {
+    sub(box, 'Kətanda yerləşmə');
+    seg(box, [['fit', 'Sığdır'], ['fill', 'Doldur']], c.fit, v => { c.fit = v; live(); done(); refreshProps(); });
+    sub(box, 'Kəsmə (crop)');
+    for (const [k, n] of [['l', 'Sol'], ['r', 'Sağ'], ['t', 'Yuxarı'], ['b', 'Aşağı']]) range(box, n, () => c.crop[k], v => c.crop[k] = v, 0, .45, .005, pct, { def: 0 });
+  }
+  sub(box, 'Qarışdırma rejimi');
+  const sel = h(`<select style="width:100%">${BLENDS.map(([v, n]) => `<option value="${v}" ${c.blend === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`);
+  sel.onchange = () => { c.blend = sel.value; live(); done(); }; box.appendChild(sel);
+  box.appendChild(h(`<div class="hint" style="margin-top:10px">◆ — keyframe. Playhead-i hərəkət etdirib dəyəri dəyişdikdə yeni keyframe avtomatik yaranır.</div>`));
+}
+function propsAnim(box, c) {
+  sub(box, 'Giriş animasiyası');
+  chips(box, ANIMS_IN, c.animIn.type, v => { c.animIn.type = v; done(); refreshProps(); previewAnim(c, 'in'); });
+  range(box, 'Müddət', () => c.animIn.dur, v => c.animIn.dur = v, .1, Math.max(.2, Math.min(5, c.dur)), .05, v => (+v).toFixed(2) + 's');
+  sub(box, 'Çıxış animasiyası');
+  chips(box, ANIMS_OUT, c.animOut.type, v => { c.animOut.type = v; done(); refreshProps(); previewAnim(c, 'out'); });
+  range(box, 'Müddət', () => c.animOut.dur, v => c.animOut.dur = v, .1, Math.max(.2, Math.min(5, c.dur)), .05, v => (+v).toFixed(2) + 's');
+  sub(box, 'Dövri animasiya');
+  chips(box, ANIMS_LOOP, c.animLoop.type, v => { c.animLoop.type = v; done(); refreshProps(); previewAnim(c, 'loop'); });
+  range(box, 'Sürət', () => c.animLoop.speed, v => c.animLoop.speed = v, .1, 4, .05, v => (+v).toFixed(2) + 'x');
+}
+function previewAnim(c, which) {
+  if (which === 'out') seek(Math.max(c.start, clipEnd(c) - c.animOut.dur - .2)); else seek(c.start);
+  play(); S.stopAt = which === 'in' ? c.start + Math.min(c.dur, c.animIn.dur + .4) : clipEnd(c);
+}
+function propsSpeed(box, c) {
+  const mode = c.curve ? 'curve' : 'normal';
+  seg(box, [['normal', 'Normal'], ['curve', 'Əyri (ramp)']], mode, v => { if (v === 'normal' && c.curve) setCurve(c, null); else if (v === 'curve' && !c.curve) setCurve(c, SPEED_CURVES[1].pts); refreshProps(); });
+  const toSlider = s => Math.log10(s), fromSlider = v => Math.pow(10, v);
+  range(box, 'Sürət', () => toSlider(c.speed || 1), v => setSpeed(c, +fromSlider(v).toFixed(2)), -1, 1, .01, v => fromSlider(v).toFixed(2) + 'x', { def: 0, onLive: () => refreshTimeline() });
+  buttons(box, [['0.25x', () => { setSpeed(c, .25); done(); refreshProps(); }], ['0.5x', () => { setSpeed(c, .5); done(); refreshProps(); }], ['1x', () => { setSpeed(c, 1); done(); refreshProps(); }], ['2x', () => { setSpeed(c, 2); done(); refreshProps(); }], ['4x', () => { setSpeed(c, 4); done(); refreshProps(); }]]);
+  if (mode === 'curve') {
+    sub(box, 'Sürət əyrisi');
+    chips(box, SPEED_CURVES.filter(s => s.pts).map(s => [s.id, s.n]), (SPEED_CURVES.find(s => JSON.stringify(s.pts) === JSON.stringify(c.curve)) || {}).id, id => { setCurve(c, SPEED_CURVES.find(s => s.id === id).pts); refreshProps(); });
+    const cvs = h('<canvas width="280" height="90" style="width:100%;background:var(--bg3);border-radius:8px;margin-top:6px"></canvas>');
+    const g = cvs.getContext('2d'); g.strokeStyle = '#22d3c5'; g.lineWidth = 2; g.beginPath();
+    for (let x = 0; x <= 280; x++) { const s = curveAt(c.curve, x / 280); const y = 85 - Math.log2(s * 2) / Math.log2(10) * 80; x ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke(); g.strokeStyle = 'rgba(255,255,255,.2)'; g.setLineDash([4, 4]); const y1 = 85 - Math.log2(2) / Math.log2(10) * 80; g.beginPath(); g.moveTo(0, y1); g.lineTo(280, y1); g.stroke();
+    box.appendChild(cvs);
+    box.appendChild(h('<div class="hint">Kəsik xətt — 1x sürət. Əyri klipin daxilində sürəti dəyişir.</div>'));
+  }
+  sub(box, 'Səs');
+  check(box, 'Səs tonunu qoru', () => c.keepPitch !== false, v => c.keepPitch = v);
+  box.appendChild(h(`<div class="hint">Klip müddəti: <b>${fmt(c.dur)}</b> · Mənbə: <b>${fmt(srcLen(c))}</b></div>`));
+  if (c.kind === 'video') buttons(box, [['❄ Kadrı dondur', freezeFrame]]);
+}
+function setSpeed(c, s) {
+  const L = srcLen(c); c.speed = clamp(s, .1, 10); c.dur = Math.max(.1, L / (c.speed * curveAvg(c.curve)));
+  fixOverlapAfterResize(c); live();
+}
+function setCurve(c, pts) { const L = srcLen(c); c.curve = pts ? pts.slice() : null; c.dur = Math.max(.1, L / ((c.speed || 1) * curveAvg(c.curve))); fixOverlapAfterResize(c); done(); refreshAll(); }
+function fixOverlapAfterResize(c) {
+  const tr = trackOf(c);
+  if (tr.kind === 'main' && S.magnet) { repackMain(); return; }
+  const next = tr.clips.filter(o => o !== c && o.start >= c.start).sort((a, b) => a.start - b.start)[0];
+  if (next && clipEnd(c) > next.start) { // sonrakıları sürüşdür
+    const sh = clipEnd(c) - next.start; for (const o of tr.clips) if (o !== c && o.start >= c.start) o.start += sh;
+  }
+}
+function propsAdjust(box, c) {
+  sub(box, 'Filtr');
+  const sel = h(`<select style="width:100%;margin-bottom:8px">${FILTERS.map(f => `<option value="${f.id}" ${c.filter.id === f.id ? 'selected' : ''}>${f.n}</option>`).join('')}</select>`);
+  sel.onchange = () => { c.filter.id = sel.value; live(); done(); refreshProps(); }; box.appendChild(sel);
+  if (c.filter.id !== 'none') range(box, 'Güc', () => c.filter.amt, v => c.filter.amt = v, 0, 1, .01, pct, { def: 1 });
+  sub(box, 'Tənzimləmə');
+  for (const [k, n, mn, mx] of ADJ_KEYS) range(box, n, () => c.adj[k] || 0, v => { if (v) c.adj[k] = v; else delete c.adj[k]; }, mn, mx, .01, v => Math.round(v * 100), { def: 0 });
+  buttons(box, [['Sıfırla', () => { c.adj = {}; c.filter = { id: 'none', amt: 1 }; live(); done(); refreshProps(); }],
+  ['Bütün kliplərə tətbiq et', () => { for (const o of allClips()) if (o !== c && (o.kind === 'video' || o.kind === 'image')) { o.adj = clone(c.adj); o.filter = clone(c.filter); } live(); done(); toast('Bütün video/şəkil kliplərinə tətbiq edildi'); }]]);
+  if (!FX.ok) box.appendChild(h('<div class="hint" style="color:var(--danger)">WebGL dəstəklənmir — filtrlər işləməyəcək.</div>'));
+}
+function propsMask(box, c) {
+  sub(box, 'Maska növü');
+  chips(box, MASKS.map(m => [m[0], m[2] + ' ' + m[1]]), c.mask.type, v => { c.mask.type = v; live(); done(); refreshProps(); });
+  if (c.mask.type === 'none') return;
+  const mk = c.mask;
+  range(box, 'Mərkəz X', () => mk.x, v => mk.x = v, -.5, 1.5, .005, pct, { def: .5 });
+  range(box, 'Mərkəz Y', () => mk.y, v => mk.y = v, -.5, 1.5, .005, pct, { def: .5 });
+  if (mk.type !== 'line') range(box, 'Ölçü', () => mk.size, v => mk.size = v, .02, 2, .005, pct, { def: .6 });
+  range(box, 'Fırlanma', () => mk.rot || 0, v => mk.rot = v, -180, 180, 1, deg, { def: 0 });
+  range(box, 'Yumşaqlıq', () => mk.feather, v => mk.feather = v, 0, 1, .01, pct, { def: 0 });
+  if (mk.type === 'rect') range(box, 'Künc radiusu', () => mk.round, v => mk.round = v, 0, 1, .01, pct, { def: 0 });
+  check(box, 'Tərsinə çevir', () => mk.invert, v => mk.invert = v);
+}
+function propsChroma(box, c) {
+  const k = c.chroma;
+  box.appendChild(h('<div class="hint" style="margin-bottom:10px">Xroma açar (yaşıl ekran): seçilmiş rəngi şəffaf edir. Altında başqa klip olması üçün bu klipi örtük trekinə qoyun.</div>'));
+  check(box, 'Aktiv', () => k.on, v => k.on = v);
+  const pick = h('<button style="margin-left:auto">💧 Ekrandan götür</button>');
+  pick.onclick = () => { S.pickColor = col => { k.color = col; k.on = true; live(); done(); refreshProps(); }; toast('Önizləmədə rəngə klikləyin'); };
+  color(box, 'Rəng', () => k.color, v => k.color = v, pick);
+  buttons(box, [['Yaşıl', () => { k.color = '#00ff00'; k.on = true; live(); done(); refreshProps(); }], ['Mavi', () => { k.color = '#0047ff'; k.on = true; live(); done(); refreshProps(); }]]);
+  range(box, 'Həssaslıq', () => k.sim, v => k.sim = v, 0, 1, .01, pct, { def: .4 });
+  range(box, 'Yumşaqlıq', () => k.smooth, v => k.smooth = v, 0, 1, .01, pct, { def: .08 });
+  range(box, 'Kənar rəngi təmizlə', () => k.spill, v => k.spill = v, 0, 1, .01, pct, { def: .1 });
+}
+function propsAudio(box, c) {
+  const lt = clamp(S.T - c.start, 0, c.dur), m = media[c.mediaId];
+  if (c.kind === 'video' && m && m.hasAudio === false) box.appendChild(h('<div class="hint" style="margin-bottom:8px">Bu videoda səs tapılmadı.</div>'));
+  sub(box, 'Səs');
+  range(box, 'Səs səviyyəsi', () => evalProp(c, 'volume', lt), v => setProp(c, 'volume', v), 0, 2, .01, pct, { kf: 'volume', clip: c, def: 1, onLive: () => refreshTimeline() });
+  check(box, 'Səssiz', () => c.muted, v => c.muted = v);
+  range(box, 'Tədricən gəliş', () => c.fadeIn, v => c.fadeIn = v, 0, Math.max(.1, Math.min(10, c.dur / 2)), .05, v => (+v).toFixed(1) + 's', { def: 0 });
+  range(box, 'Tədricən gediş', () => c.fadeOut, v => c.fadeOut = v, 0, Math.max(.1, Math.min(10, c.dur / 2)), .05, v => (+v).toFixed(1) + 's', { def: 0 });
+  if (c.kind === 'video') buttons(box, [['🎵 Səsi ayrıca trekə çıxar', detachAudio]]);
+  if (c.kind === 'audio') {
+    sub(box, 'Ritm (beat)');
+    buttons(box, [[m && m.beats ? `🥁 Ritmlər (${m.beats.length}) — yenidən tap` : '🥁 Ritmləri avtomatik tap', () => beatSel()], ['Ritmləri təmizlə', () => { if (m) { m.beats = null; DB.saveMedia(m); refreshAll(); } }]]);
+    buttons(box, [['Ritmləri marker et', () => { if (!m || !m.beats) { toast('Əvvəlcə ritmləri tapın'); return; } for (const b of m.beats) { const t = c.start + (b - c.in) / (c.speed || 1); if (t >= c.start && t <= clipEnd(c)) P.markers.push(+t.toFixed(3)); } P.markers = [...new Set(P.markers)].sort((a, b) => a - b); done(); refreshAll(); }]]);
+    box.appendChild(h('<div class="hint">Ritm nöqtələri sarı nöqtə kimi göstərilir; kliplər sürüşdürüldükdə onlara yapışır.</div>'));
+  }
+}
+async function beatSel() {
+  const c = selClip(); if (!c || c.kind !== 'audio') return;
+  const m = media[c.mediaId]; if (!m) return;
+  for (let i = 0; i < 100 && !m.peaks; i++) { if (i === 0) toast('Səs analiz olunur…'); await new Promise(r => setTimeout(r, 100)); }
+  if (!m.peaks) { toast('Səs analizi alınmadı'); return; }
+  m.beats = detectBeats(m); DB.saveMedia(m); refreshAll(); toast(m.beats.length + ' ritm nöqtəsi tapıldı');
+}
+function propsText(box, c) {
+  const s = c.text;
+  const ta = h(`<textarea rows="3" style="width:100%;resize:vertical;margin-bottom:8px" id="txtContent"></textarea>`);
+  ta.value = s.content; ta.oninput = () => { s.content = ta.value; live(); refreshTimelineSoon(); }; ta.onchange = done;
+  box.appendChild(ta);
+  const fsel = h(`<select style="width:100%;margin-bottom:8px">${FONTS.map(f => `<option ${s.font === f ? 'selected' : ''} style="font-family:'${f}'">${f}</option>`).join('')}</select>`);
+  fsel.onchange = () => { s.font = fsel.value; live(); done(); }; box.appendChild(fsel);
+  range(box, 'Ölçü', () => s.size, v => s.size = v, 10, 400, 1, v => Math.round(v), { def: 80 });
+  buttons(box, [
+    ['B', () => { s.bold = !s.bold; live(); done(); refreshProps(); }, 'Qalın'], ['I', () => { s.italic = !s.italic; live(); done(); refreshProps(); }, 'Kursiv'],
+    ['⯇', () => { s.align = 'left'; live(); done(); }, 'Sola'], ['≡', () => { s.align = 'center'; live(); done(); }, 'Mərkəz'], ['⯈', () => { s.align = 'right'; live(); done(); }, 'Sağa'],
+  ]);
+  color(box, 'Rəng', () => s.color, v => s.color = v);
+  check(box, 'Qradiyent', () => s.grad, v => s.grad = v);
+  if (s.grad) color(box, 'Rəng 2', () => s.color2, v => s.color2 = v);
+  range(box, 'Hərf aralığı', () => s.letter, v => s.letter = v, -10, 60, 1, v => Math.round(v), { def: 0 });
+  range(box, 'Sətir aralığı', () => s.lineH, v => s.lineH = v, .7, 2.5, .05, v => (+v).toFixed(2), { def: 1.2 });
+  sub(box, 'Kontur');
+  check(box, 'Aktiv', () => s.stroke.on, v => s.stroke.on = v);
+  if (s.stroke.on) { color(box, 'Rəng', () => s.stroke.color, v => s.stroke.color = v); range(box, 'Qalınlıq', () => s.stroke.w, v => s.stroke.w = v, 1, 30, .5, v => (+v).toFixed(1), { def: 6 }); }
+  sub(box, 'Kölgə / parıltı');
+  check(box, 'Aktiv', () => s.shadow.on, v => s.shadow.on = v);
+  if (s.shadow.on) {
+    color(box, 'Rəng', () => s.shadow.color, v => s.shadow.color = v);
+    range(box, 'Bulanıqlıq', () => s.shadow.blur, v => s.shadow.blur = v, 0, 60, 1, v => Math.round(v));
+    range(box, 'X', () => s.shadow.x, v => s.shadow.x = v, -30, 30, 1, v => Math.round(v), { def: 0 });
+    range(box, 'Y', () => s.shadow.y, v => s.shadow.y = v, -30, 30, 1, v => Math.round(v), { def: 0 });
+  }
+  sub(box, 'Fon qutusu');
+  check(box, 'Aktiv', () => s.bg.on, v => s.bg.on = v);
+  if (s.bg.on) {
+    color(box, 'Rəng', () => s.bg.color, v => s.bg.color = v);
+    range(box, 'Şəffaflıq', () => s.bg.opacity, v => s.bg.opacity = v, 0, 1, .01, pct);
+    range(box, 'Boşluq', () => s.bg.pad, v => s.bg.pad = v, 0, 80, 1, v => Math.round(v));
+    range(box, 'Radius', () => s.bg.radius, v => s.bg.radius = v, 0, 80, 1, v => Math.round(v));
+  }
+}
+let tlSoonT = 0; function refreshTimelineSoon() { clearTimeout(tlSoonT); tlSoonT = setTimeout(refreshTimeline, 250); }
+function propsShape(box, c) {
+  const s = c.shape;
+  sub(box, 'Forma');
+  chips(box, SHAPES.map(x => [x.id, x.ic + ' ' + x.n]), s.type, v => { s.type = v; live(); done(); refreshProps(); });
+  color(box, 'Rəng', () => s.color, v => s.color = v);
+  check(box, 'Qradiyent', () => s.grad, v => s.grad = v);
+  if (s.grad) color(box, 'Rəng 2', () => s.color2, v => s.color2 = v);
+  range(box, 'En', () => s.w, v => s.w = v, 4, 2400, 1, v => Math.round(v));
+  range(box, 'Hündürlük', () => s.h, v => s.h = v, 4, 2400, 1, v => Math.round(v));
+  if (s.type === 'round' || s.type === 'frame') range(box, 'Radius', () => s.radius, v => s.radius = v, 0, 400, 1, v => Math.round(v));
+  if (s.type === 'frame') range(box, 'Qalınlıq', () => s.stroke, v => s.stroke = v, 1, 100, 1, v => Math.round(v));
+}
+function propsFx(box, c) {
+  sub(box, 'Effekt');
+  chips(box, EFFECTS.map(e => [e.id, e.ic + ' ' + e.n]), c.fx.id, v => { c.fx.id = v; c.name = EFFECTS.find(e => e.id === v).n; live(); done(); refreshProps(); });
+  range(box, 'Güc', () => c.fx.amt, v => c.fx.amt = v, 0, 1, .01, pct, { def: .8 });
+  range(box, 'Sürət', () => c.fx.speed, v => c.fx.speed = v, .1, 4, .05, v => (+v).toFixed(2) + 'x', { def: 1 });
+}
+function propsFilterClip(box, c) {
+  sub(box, 'Filtr layı');
+  const sel = h(`<select style="width:100%;margin-bottom:8px">${FILTERS.map(f => `<option value="${f.id}" ${c.filter.id === f.id ? 'selected' : ''}>${f.n}</option>`).join('')}</select>`);
+  sel.onchange = () => { c.filter.id = sel.value; c.name = FILTERS.find(f => f.id === sel.value).n; live(); done(); refreshProps(); }; box.appendChild(sel);
+  range(box, 'Güc', () => c.filter.amt, v => c.filter.amt = v, 0, 1, .01, pct, { def: 1 });
+  sub(box, 'Tənzimləmə layı');
+  for (const [k, n, mn, mx] of ADJ_KEYS) range(box, n, () => c.adj[k] || 0, v => { if (v) c.adj[k] = v; else delete c.adj[k]; }, mn, mx, .01, v => Math.round(v * 100), { def: 0 });
+}
+
+/* =========================================================
+   OYNATMA
+   ========================================================= */
+const clock = { t0: 0, p0: 0 };
+function play() {
+  if (S.playing) return;
+  ensureAudio();
+  if (S.T >= projDur() - .02) S.T = 0;
+  if (!projDur()) return;
+  S.playing = true; clock.p0 = performance.now(); clock.t0 = S.T;
+  $('#playBtn').textContent = '❚❚';
+}
+function pause() {
+  S.playing = false; S.stopAt = null; $('#playBtn').textContent = '▶';
+  for (const v of els.values()) { if (!v.el.paused) v.el.pause(); setGain(v, 0); }
+  S.dirty = true; refreshProps(true);
+}
+function togglePlay() { S.playing ? pause() : play(); }
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (S.playing) {
+    S.T = clock.t0 + (now - clock.p0) / 1000;
+    const d = projDur();
+    if (S.stopAt != null && S.T >= S.stopAt) { S.T = S.stopAt; pause(); }
+    else if (S.T >= d) { S.T = d; if (S.exporting) { exportTick(true); } else pause(); }
+    sync(S.T, S.playing);
+    renderFrame(Math.min(S.T, Math.max(0, d - 1e-3)));
+    drawSelection(); updatePlayhead();
+    if (S.exporting) exportTick(false);
+    else {
+      const x = S.T * S.pps; if (x > tscroll.scrollLeft + tscroll.clientWidth - 40 || x < tscroll.scrollLeft) tscroll.scrollLeft = x - 60;
+    }
+  } else if (S.dirty) {
+    S.dirty = false; sync(S.T, false);
+    renderFrame(Math.min(S.T, Math.max(0, projDur() - 1e-3)));
+    drawSelection(); updatePlayhead();
+  }
+}
+
+/* =========================================================
+   ÖNİZLƏMƏ: ölçü, seçim, birbaşa idarə
+   ========================================================= */
+const cwrap = $('#cwrap'), overlay = $('#overlay');
+const selBox = h('<div class="sel-box"><div class="h tl"></div><div class="h tr"></div><div class="h bl"></div><div class="h br"></div><div class="h rot"></div></div>');
+overlay.appendChild(selBox);
+function fitStage() {
+  const st = $('#stage'); const aw = st.clientWidth - 28, ah = st.clientHeight - 28, ar = P.w / P.h;
+  let w = aw, hh = w / ar; if (hh > ah) { hh = ah; w = hh * ar; }
+  cwrap.style.width = Math.max(10, w) + 'px'; cwrap.style.height = Math.max(10, hh) + 'px';
+  S.dirty = true;
+}
+function applyRatio(changed) {
+  const r = RATIOS[P.ratio] || RATIOS['16:9']; P.w = r[0]; P.h = r[1];
+  if (!S.exporting) setCanvasSize(P.w * S.pq, P.h * S.pq);
+  $('#ratioSel').value = P.ratio; fitStage(); filterPrev = null; textCache.clear();
+  if (changed) toast('Nisbət: ' + RATIO_NAMES[P.ratio]);
+}
+function drawSelection() {
+  const c = selClip();
+  if (!c || !isVisual(c) || S.T < c.start || S.T >= clipEnd(c) || S.exporting || trackOf(c).hidden) { selBox.style.display = 'none'; return; }
+  const g = clipGeom(c, S.T, CW, CH); if (!g) { selBox.style.display = 'none'; return; }
+  const k = cv.clientWidth / CW, w = Math.abs(g.w) * k, hh = Math.abs(g.h) * k;
+  selBox.style.display = 'block'; selBox.style.width = w + 'px'; selBox.style.height = hh + 'px';
+  selBox.style.left = (g.cx * k - w / 2) + 'px'; selBox.style.top = (g.cy * k - hh / 2) + 'px';
+  selBox.style.transform = `rotate(${g.rot}deg)`;
+}
+function hitTest(px, py) {
+  const vis = P.tracks.filter(t => t.kind === 'main' || t.kind === 'visual');
+  for (let i = vis.length - 1; i >= 0; i--) {
+    const tr = vis[i]; if (tr.hidden) continue;
+    for (const c of tr.clips) {
+      if (S.T < c.start || S.T >= clipEnd(c)) continue;
+      const g = clipGeom(c, S.T, CW, CH); if (!g) continue;
+      const a = -g.rot * Math.PI / 180, dx = px - g.cx, dy = py - g.cy;
+      const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
+      if (Math.abs(lx) <= Math.abs(g.w) / 2 && Math.abs(ly) <= Math.abs(g.h) / 2) return c;
+    }
+  }
+  return null;
+}
+cwrap.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const r = cv.getBoundingClientRect(), toC = ev => [(ev.clientX - r.left) / r.width * CW, (ev.clientY - r.top) / r.height * CH];
+  const [px, py] = toC(e);
+  if (S.pickColor) {
+    const d = ctx.getImageData(clamp(px | 0, 0, CW - 1), clamp(py | 0, 0, CH - 1), 1, 1).data;
+    S.pickColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('')); S.pickColor = null; return;
+  }
+  const handle = e.target.closest('.h');
+  let c = selClip();
+  if (!handle) { const hit = hitTest(px, py); if (!hit) { select(null); return; } if (!c || hit.id !== c.id) select(hit.id); c = hit; }
+  if (!c || !isVisual(c) || trackOf(c).locked || S.T < c.start || S.T >= clipEnd(c)) return;
+  if (S.playing) pause();
+  e.preventDefault();
+  const lt = clamp(S.T - c.start, 0, c.dur), g = clipGeom(c, S.T, CW, CH);
+  const st = { px, py, x: evalProp(c, 'x', lt), y: evalProp(c, 'y', lt), scale: evalProp(c, 'scale', lt), rot: evalProp(c, 'rot', lt), dist: Math.max(4, Math.hypot(px - g.cx, py - g.cy)), ang: Math.atan2(py - g.cy, px - g.cx), moved: false };
+  const mode = handle ? (handle.classList.contains('rot') ? 'rot' : 'scale') : 'move';
+  const thr = 8 * CW / r.width;
+  const gv = overlay.querySelector('.guide.v'), gh = overlay.querySelector('.guide.h');
+  const mv = ev => {
+    const [qx, qy] = toC(ev); st.moved = true;
+    if (mode === 'move') {
+      let nx = st.x + (qx - st.px) / CW, ny = st.y + (qy - st.py) / CH;
+      const sx = Math.abs(nx * CW - CW / 2) < thr, sy = Math.abs(ny * CH - CH / 2) < thr;
+      if (sx) nx = .5; if (sy) ny = .5;
+      gv.style.display = sx ? 'block' : 'none'; gh.style.display = sy ? 'block' : 'none';
+      setProp(c, 'x', nx); setProp(c, 'y', ny);
+    } else if (mode === 'scale') {
+      setProp(c, 'scale', clamp(st.scale * Math.hypot(qx - g.cx, qy - g.cy) / st.dist, .02, 20));
+    } else {
+      let a = st.rot + (Math.atan2(qy - g.cy, qx - g.cx) - st.ang) * 180 / Math.PI;
+      a = ((a + 540) % 360) - 180;
+      for (const s of [-180, -90, 0, 90, 180]) if (Math.abs(a - s) < 4) a = s;
+      setProp(c, 'rot', a);
+    }
+    S.dirty = true;
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+    gv.style.display = gh.style.display = 'none';
+    if (st.moved) { commit(); refreshProps(); refreshTimeline(); }
+  };
+  window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+});
+cwrap.addEventListener('dblclick', () => {
+  const c = selClip(); if (!c || c.kind !== 'text') return;
+  S.propTab = 'text'; refreshProps(); const ta = $('#txtContent'); if (ta) { ta.focus(); ta.select(); }
+});
+
+/* =========================================================
+   REDAKTƏ ƏMƏLİYYATLARI
+   ========================================================= */
+function select(id) {
+  S.sel = id;
+  tracksEl.querySelectorAll('.clip').forEach(el => el.classList.toggle('sel', el.dataset.cid === id));
+  refreshProps();
+  if (['filter', 'trans'].includes(S.leftTab)) renderLeft();
+  S.dirty = true;
+}
+function refreshAll() { renderTimeline(); refreshProps(); if (['filter', 'trans', 'media', 'audio'].includes(S.leftTab)) renderLeft(); S.dirty = true; }
+function targetClip() {
+  const c = selClip(); if (c) return c;
+  const m = mainTrack(); return m.clips.find(c => S.T > c.start && S.T < clipEnd(c)) || null;
+}
+function splitClip(c, t) {
+  if (t <= c.start + .03 || t >= clipEnd(c) - .03) return null;
+  const tr = trackOf(c), lt = t - c.start, total = c.dur;
+  const b = clone(c); b.id = uid();
+  if (c.in != null) {
+    const offs = srcOffset(c, lt);
+    if (c.curve) { const L = srcLen(c); c.speed = clamp(offs / lt, .1, 10); b.speed = clamp((L - offs) / (total - lt), .1, 10); c.curve = null; b.curve = null; }
+    b.in = c.in + offs;
+  }
+  b.start = t; b.dur = total - lt; c.dur = lt;
+  if (c.kf) {
+    for (const k in c.kf) {
+      const arr = c.kf[k], vAt = (() => { const tmp = { kf: { [k]: arr }, [k]: c[k] }; return evalProp(tmp, k, lt); })();
+      const A = arr.filter(f => f.t < lt), B = arr.filter(f => f.t > lt).map(f => ({ t: f.t - lt, v: f.v }));
+      A.push({ t: lt, v: vAt }); B.unshift({ t: 0, v: vAt });
+      c.kf[k] = A; b.kf[k] = B;
+    }
+  }
+  b.trans = null;
+  if (c.animOut) { c.animOut = { type: 'none', dur: .5 }; b.animIn = { type: 'none', dur: .5 }; }
+  if (c.fadeOut != null) { b.fadeIn = 0; b.fadeOut = c.fadeOut; c.fadeOut = 0; }
+  tr.clips.splice(tr.clips.indexOf(c) + 1, 0, b); sortTrack(tr);
+  return b;
+}
+function splitSel() {
+  const c = targetClip(); if (!c) { toast('Bölmək üçün klip seçin'); return; }
+  const b = splitClip(c, S.T); if (!b) { toast('Playhead-i klipin üzərinə gətirin'); return; }
+  commit(); refreshAll(); toast('✂ Bölündü');
+}
+function deleteSel() {
+  const c = selClip(); if (!c) return;
+  const tr = trackOf(c); if (tr.locked) { toast('Trek kilidlidir'); return; }
+  tr.clips.splice(tr.clips.indexOf(c), 1); dropEl(c.id);
+  repackMain(); cleanTracks(); S.sel = null; commit(); refreshAll();
+}
+function duplicateSel() {
+  const c = selClip(); if (!c) return;
+  const n = clone(c); n.id = uid(); n.start = clipEnd(c) - 1e-4; n.trans = null;
+  const tr = trackOf(c);
+  if (tr.kind === 'main' && S.magnet) { tr.clips.splice(tr.clips.indexOf(c) + 1, 0, n); repackMain(); }
+  else { n.start = clipEnd(c); placeClip(n, tr); }
+  commit(); select(n.id); refreshAll();
+}
+function copySel() { const c = selClip(); if (!c) return; S.clipboard = clone(c); toast('Kopyalandı'); }
+function pasteClip() {
+  if (!S.clipboard) return;
+  const n = clone(S.clipboard); n.id = uid(); n.start = S.T; n.trans = null;
+  if (n.mediaId && !media[n.mediaId]) { toast('Media artıq mövcud deyil'); return; }
+  placeClip(n); commit(); select(n.id); refreshAll();
+}
+async function freezeFrame() {
+  const c = selClip();
+  if (!c || c.kind !== 'video') { toast('Video klip seçin'); return; }
+  if (S.T < c.start || S.T >= clipEnd(c)) { toast('Playhead-i klipin üzərinə gətirin'); return; }
+  pause(); sync(S.T, false);
+  const v = els.get(c.id); if (!v) return;
+  for (let i = 0; i < 60 && (v.el.seeking || v.el.readyState < 2); i++) await new Promise(r => setTimeout(r, 50));
+  const w = v.el.videoWidth, hh = v.el.videoHeight;
+  const cvs = document.createElement('canvas'); cvs.width = w; cvs.height = hh; cvs.getContext('2d').drawImage(v.el, 0, 0);
+  const blob = await new Promise(r => cvs.toBlob(r, 'image/jpeg', .95));
+  const [m] = await importFiles([new File([blob], 'Dondurulmuş kadr ' + fmt(S.T) + '.jpg', { type: 'image/jpeg' })]);
+  if (!m) return;
+  const t = S.T, FD = 3;
+  const f = makeMediaClip(m, t); f.dur = FD;
+  for (const k of ['x', 'y', 'scale', 'rot', 'opacity', 'flipH', 'flipV', 'blend', 'fit']) f[k] = c[k];
+  for (const k of ['crop', 'filter', 'adj', 'mask', 'chroma']) f[k] = clone(c[k]);
+  const tr = trackOf(c);
+  const b = splitClip(c, t);
+  const after = b ? c : (t <= c.start + .03 ? null : c);
+  for (const o of tr.clips) if (o.start >= t - .001 && o !== f) o.start += FD;
+  const idx = after ? tr.clips.indexOf(after) + 1 : tr.clips.indexOf(c);
+  f.start = t; tr.clips.splice(idx, 0, f);
+  sortTrack(tr); repackMain(); commit(); select(f.id); refreshAll(); toast('❄ Kadr donduruldu (3 san)');
+}
+function detachAudio() {
+  const c = selClip();
+  if (!c || c.kind !== 'video') { toast('Video klip seçin'); return; }
+  const m = media[c.mediaId];
+  if (m && m.hasAudio === false) { toast('Bu videoda səs yoxdur'); return; }
+  const a = {
+    id: uid(), kind: 'audio', mediaId: c.mediaId, name: 'Səs: ' + c.name, start: c.start, in: c.in, dur: c.dur, speed: c.speed, curve: c.curve ? c.curve.slice() : null,
+    volume: c.volume, fadeIn: c.fadeIn, fadeOut: c.fadeOut, keepPitch: c.keepPitch, kf: c.kf && c.kf.volume ? { volume: clone(c.kf.volume) } : {}
+  };
+  c.muted = true; placeClip(a); commit(); refreshAll(); toast('🎵 Səs ayrıldı');
+}
+function trimTo(side) {
+  const c = targetClip(); if (!c) return;
+  if (S.T <= c.start || S.T >= clipEnd(c)) { toast('Playhead klipin üzərində olmalıdır'); return; }
+  const d = S.T - c.start;
+  if (side === 'l') {
+    if (c.in != null) c.in += srcOffset(c, d);
+    c.dur -= d; c.start = S.T;
+    if (c.kf) for (const k in c.kf) c.kf[k] = c.kf[k].map(f => ({ t: f.t - d, v: f.v }));
+    if (trackOf(c).kind === 'main' && S.magnet) { repackMain(); seek(c.start); }
+  } else c.dur = d;
+  commit(); refreshAll();
+}
+function addMarker() { const t = +S.T.toFixed(3); if (!P.markers.includes(t)) P.markers.push(t); P.markers.sort((a, b) => a - b); commit(); refreshTimeline(); toast('🔖 Marker əlavə edildi'); }
+
+/* =========================================================
+   EKSPORT
+   ========================================================= */
+function pickMime(fmtv) {
+  if (!window.MediaRecorder) return null;
+  const c = fmtv === 'mp4' ? ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4d002a,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4'] : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  return c.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || null;
+}
+function openModal(html) { $('#modal').innerHTML = html; $('#modalBg').classList.add('show'); }
+function closeModal() { $('#modalBg').classList.remove('show'); }
+function exportDialog() {
+  if (!projDur()) { toast('Taymlayn boşdur'); return; }
+  pause();
+  const mp4 = pickMime('mp4'), webm = pickMime('webm');
+  if (!mp4 && !webm) { toast('Bu brauzer video yazmağı dəstəkləmir'); return; }
+  openModal(`<h3>⬇ Videonu eksport et</h3>
+  <div class="row"><label>Ad</label><input type="text" id="exName" style="flex:1" value="${esc($('#projName').value || 'video')}"></div>
+  <div class="row"><label>Keyfiyyət</label><select id="exRes" style="flex:1"><option value="480">480p</option><option value="720">720p HD</option><option value="1080" selected>1080p Full HD</option><option value="1440">2K</option><option value="2160">4K</option></select></div>
+  <div class="row"><label>Kadr sürəti</label><select id="exFps" style="flex:1"><option>24</option><option>25</option><option selected>30</option><option>50</option><option>60</option></select></div>
+  <div class="row"><label>Bitreyt</label><select id="exBr" style="flex:1"><option value=".05">Aşağı (kiçik fayl)</option><option value=".1">Orta</option><option value=".18" selected>Yüksək</option><option value=".3">Maksimum</option></select></div>
+  <div class="row"><label>Format</label><select id="exFmt" style="flex:1">${mp4 ? '<option value="mp4" selected>MP4 (H.264)</option>' : ''}${webm ? `<option value="webm" ${mp4 ? '' : 'selected'}>WebM (VP9)</option>` : ''}</select></div>
+  <div class="hint" id="exInfo"></div>
+  <div class="hint" style="margin-top:8px">⚠️ Eksport real vaxtda aparılır (${fmt(projDur())}). Bu müddətdə səhifəni açıq və görünən saxlayın.</div>
+  <div class="btnrow" style="margin-top:14px"><button id="exCancel">Ləğv et</button><button class="primary" id="exGo">Eksport et</button></div>`);
+  const info = () => {
+    const [w, hh] = exportSize(+$('#exRes').value), fps = +$('#exFps').value, bps = w * hh * fps * +$('#exBr').value;
+    $('#exInfo').innerHTML = `Ölçü: <b>${w}×${hh}</b> · Bitreyt: <b>${(bps / 1e6).toFixed(1)} Mbit/s</b> · Təxmini fayl: <b>${(bps * projDur() / 8 / 1e6 + projDur() * .024).toFixed(1)} MB</b>`;
+  };
+  ['exRes', 'exFps', 'exBr'].forEach(id => $('#' + id).onchange = info); info();
+  $('#exCancel').onclick = closeModal;
+  $('#exGo').onclick = () => {
+    const [w, hh] = exportSize(+$('#exRes').value), fps = +$('#exFps').value;
+    startExport({ w, h: hh, fps, bps: Math.round(w * hh * fps * +$('#exBr').value), mime: pickMime($('#exFmt').value), name: ($('#exName').value || 'video').replace(/[\\/:*?"<>|]+/g, '_') });
+  };
+}
+function exportSize(short) { const s = short / Math.min(P.w, P.h); return [Math.round(P.w * s / 2) * 2, Math.round(P.h * s / 2) * 2]; }
+let EX = null;
+async function startExport(o) {
+  ensureAudio();
+  openModal(`<h3>⏳ Eksport olunur…</h3><div class="hint" id="exSt">Hazırlanır…</div><div class="prog"><div id="exBar"></div></div><div class="btnrow"><button id="exStop">Dayandır</button></div>`);
+  $('#exStop').onclick = () => exportTick(true, true);
+  S.exporting = true; selBox.style.display = 'none';
+  setCanvasSize(o.w, o.h);
+  const stream = cv.captureStream(o.fps);
+  if (streamDest) for (const t of streamDest.stream.getAudioTracks()) stream.addTrack(t);
+  let rec;
+  try { rec = new MediaRecorder(stream, { mimeType: o.mime, videoBitsPerSecond: o.bps, audioBitsPerSecond: 192000 }); }
+  catch (e) { try { rec = new MediaRecorder(stream, { mimeType: o.mime }); } catch (e2) { S.exporting = false; applyRatio(false); openModal(`<h3>Xəta</h3><div class="hint">MediaRecorder başlamadı: ${esc(e2.message)}</div><div class="btnrow" style="margin-top:12px"><button onclick="closeModal()">Bağla</button></div>`); return; } }
+  const chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  EX = { rec, chunks, o, t0: performance.now(), stopping: false };
+  S.T = 0; sync(0, false);
+  await waitReady(0);
+  renderFrame(0);
+  rec.start(400);
+  play();
+}
+async function waitReady(t) {
+  for (let i = 0; i < 80; i++) {
+    let ok = true;
+    for (const c of allClips()) {
+      if (c.kind !== 'video' || t < c.start - .1 || t >= clipEnd(c)) continue;
+      const v = els.get(c.id); if (v && (v.el.seeking || v.el.readyState < 3)) ok = false;
+    }
+    if (ok) return; await new Promise(r => setTimeout(r, 50));
+  }
+}
+function exportTick(end, cancel) {
+  if (!EX) return;
+  const d = projDur();
+  if (!end) { const p = clamp(S.T / d, 0, 1); $('#exBar').style.width = (p * 100).toFixed(1) + '%'; $('#exSt').textContent = `${fmt(S.T)} / ${fmt(d)} · ${Math.round(p * 100)}%`; return; }
+  if (EX.stopping) return; EX.stopping = true;
+  const ex = EX;
+  const finish = () => {
+    pause();
+    ex.rec.onstop = async () => {
+      S.exporting = false; EX = null; applyRatio(false); S.T = 0; S.dirty = true;
+      if (cancel) { closeModal(); toast('Eksport dayandırıldı'); return; }
+      const type = ex.o.mime.split(';')[0], ext = type.includes('mp4') ? 'mp4' : 'webm';
+      let blob = new Blob(ex.chunks, { type });
+      if (ext === 'webm') blob = await fixWebmDuration(blob, d * 1000);
+      const url = URL.createObjectURL(blob), fn = ex.o.name + '.' + ext;
+      openModal(`<h3>✅ Hazırdır!</h3><div class="hint">Fayl: <b>${esc(fn)}</b> · ${(blob.size / 1e6).toFixed(1)} MB · ${ex.o.w}×${ex.o.h} · ${ex.o.fps} fps</div>
+      <video src="${url}" controls style="width:100%;margin-top:12px;border-radius:8px;max-height:240px;background:#000"></video>
+      <div class="btnrow" style="margin-top:12px"><button onclick="closeModal()">Bağla</button><a id="dl" href="${url}" download="${esc(fn)}" style="flex:1"><button class="primary" style="width:100%">⬇ Yüklə</button></a></div>`);
+      $('#dl').click();
+    };
+    try { ex.rec.stop(); } catch (e) { ex.rec.onstop(); }
+  };
+  if (cancel) finish(); else setTimeout(finish, 250);
+}
+/* MediaRecorder WebM fayllarına müddət (Duration) məlumatı əlavə edir */
+function ebmlId(b, p) { let len = 1, m = 0x80; while (len <= 4 && !(b[p] & m)) { m >>= 1; len++; } let id = 0; for (let i = 0; i < len; i++) id = id * 256 + b[p + i]; return { len, id }; }
+function ebmlSize(b, p) { let len = 1, m = 0x80; while (len <= 8 && !(b[p] & m)) { m >>= 1; len++; } if (len > 8) return null; let v = b[p] & (m - 1), ones = v === m - 1; for (let i = 1; i < len; i++) { v = v * 256 + b[p + i]; if (b[p + i] !== 255) ones = false; } return { len, v, unknown: ones }; }
+async function fixWebmDuration(blob, ms) {
+  try {
+    const b = new Uint8Array(await blob.arrayBuffer()); let p = 0;
+    let id = ebmlId(b, p), sz = ebmlSize(b, p + id.len); if (id.id !== 0x1A45DFA3) return blob; p += id.len + sz.len + sz.v;
+    id = ebmlId(b, p); if (id.id !== 0x18538067) return blob; const seg = ebmlSize(b, p + id.len); if (!seg.unknown) return blob;
+    p += id.len + seg.len;
+    while (p < b.length) {
+      id = ebmlId(b, p); const s = ebmlSize(b, p + id.len); if (!s) return blob; const ds = p + id.len + s.len;
+      if (id.id === 0x1549A966) {
+        const end = ds + s.v; let q = ds, scale = 1e6;
+        while (q < end) { const i2 = ebmlId(b, q), s2 = ebmlSize(b, q + i2.len), d2 = q + i2.len + s2.len; if (i2.id === 0x4489) return blob; if (i2.id === 0x2AD7B1) { let v = 0; for (let k = 0; k < s2.v; k++) v = v * 256 + b[d2 + k]; scale = v; } q = d2 + s2.v; }
+        const dur = new Uint8Array(11); dur[0] = 0x44; dur[1] = 0x89; dur[2] = 0x88; new DataView(dur.buffer).setFloat64(3, ms * 1e6 / scale);
+        const sb = new Uint8Array(8); sb[0] = 1; let v = s.v + 11; for (let k = 7; k >= 1; k--) { sb[k] = v % 256; v = Math.floor(v / 256); }
+        return new Blob([b.subarray(0, p + id.len), sb, b.subarray(ds, end), dur, b.subarray(end)], { type: blob.type });
+      }
+      if (s.unknown) return blob; p = ds + s.v;
+    }
+  } catch (e) { }
+  return blob;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && S.exporting) toast('⚠️ Eksport zamanı səhifədən çıxmayın!', 4000); });
+async function saveFrame() {
+  pause();
+  setCanvasSize(P.w, P.h); sync(S.T, false); await waitReady(S.T); renderFrame(Math.min(S.T, Math.max(0, projDur() - 1e-3)));
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  applyRatio(false);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ($('#projName').value || 'kadr') + '-' + fmt(S.T).replace(/[:.]/g, '-') + '.png'; a.click();
+  toast('📷 Kadr PNG kimi saxlanıldı');
+}
+
+/* =========================================================
+   SƏS YAZISI (voiceover) və SƏS EFFEKTLƏRİ
+   ========================================================= */
+let recState = null;
+async function toggleRecord() {
+  if (recState) { recState.rec.stop(); return; }
+  let s;
+  try { s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { toast('Mikrofona icazə verilmədi'); return; }
+  const rec = new MediaRecorder(s), chunks = [], t0 = S.T;
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  rec.onstop = async () => {
+    s.getTracks().forEach(t => t.stop()); pause(); clearInterval(recState.iv);
+    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+    recState = null; updateRecUI();
+    const [m] = await importFiles([new File([blob], 'Səs yazısı ' + new Date().toLocaleTimeString() + '.webm', { type: blob.type })]);
+    if (m) { const c = makeMediaClip(m, t0); placeClip(c); commit(); select(c.id); refreshAll(); toast('🎙 Səs yazısı əlavə edildi'); }
+  };
+  rec.start();
+  recState = { rec, t0, started: performance.now(), iv: setInterval(updateRecUI, 250) };
+  if (projDur() > S.T) play();
+  updateRecUI();
+}
+function updateRecUI() {
+  const b = $('#recBtn'), st = $('#recState'); if (!b) return;
+  b.textContent = recState ? '⏹ Yazını dayandır' : '🎙 Səs yaz (voiceover)';
+  b.classList.toggle('on', !!recState);
+  st.innerHTML = recState ? `<span id="recDot"></span>Yazılır… ${fmt((performance.now() - recState.started) / 1000)}` : 'Playhead mövqeyindən başlayaraq mikrofondan səs yazılır.';
+}
+const SFX_LIST = [['whoosh', 'Vuş', '💨'], ['pop', 'Pop', '🫧'], ['ding', 'Zəng', '🔔'], ['click', 'Klik', '🖱'], ['boom', 'Bum', '💥'], ['beep', 'Bip', '📟'], ['riser', 'Yüksəliş', '📈'], ['applause', 'Alqış', '👏'], ['cash', 'Kassa', '💰'], ['beat', 'Ritm loop', '🥁']];
+async function synthSfx(id, name) {
+  const sr = 44100, D = { whoosh: .9, pop: .16, ding: 1.8, click: .06, boom: 1.8, beep: .35, riser: 2.6, applause: 3.2, cash: 1.2, beat: 8 }[id];
+  const oc = new OfflineAudioContext(2, Math.ceil(sr * D), sr), out = oc.destination;
+  const noiseBuf = () => { const b = oc.createBuffer(1, Math.ceil(sr * D), sr); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+  const nsrc = (buf) => { const s = oc.createBufferSource(); s.buffer = buf || noiseBuf(); return s; };
+  const gain = (v) => { const g = oc.createGain(); g.gain.value = v; return g; };
+  const filt = (type, f, q = 1) => { const b = oc.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
+  const tone = (type, f0, f1, t, dur, vol) => {
+    const o = oc.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur * .8);
+    const g = oc.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(out); o.start(t); o.stop(t + dur + .02);
+  };
+  const nb = noiseBuf();
+  const hit = (t, dur, vol, type, f) => { const s = nsrc(nb); const fl = filt(type, f, .8); const g = oc.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); s.connect(fl).connect(g).connect(out); s.start(t, Math.random() * 2); s.stop(t + dur + .02); };
+  switch (id) {
+    case 'whoosh': { const s = nsrc(); const bp = filt('bandpass', 300, 1.4); bp.frequency.setValueAtTime(250, 0); bp.frequency.exponentialRampToValueAtTime(3800, D * .55); bp.frequency.exponentialRampToValueAtTime(700, D); const g = gain(0); g.gain.linearRampToValueAtTime(1.2, D * .5); g.gain.linearRampToValueAtTime(0, D); s.connect(bp).connect(g).connect(out); s.start(); break; }
+    case 'pop': tone('sine', 900, 140, 0, .15, .9); break;
+    case 'ding': tone('sine', 1318.5, 1318.5, 0, D, .5); tone('sine', 2637, 2637, 0, D * .6, .15); tone('sine', 3951, 3951, 0, D * .3, .06); break;
+    case 'click': hit(0, .03, .9, 'highpass', 2500); tone('square', 2000, 1500, 0, .02, .2); break;
+    case 'boom': tone('sine', 110, 32, 0, D, 1); hit(0, .6, .8, 'lowpass', 500); break;
+    case 'beep': { const o = oc.createOscillator(); o.type = 'square'; o.frequency.value = 1000; const g = gain(0); g.gain.linearRampToValueAtTime(.22, .01); g.gain.setValueAtTime(.22, D - .03); g.gain.linearRampToValueAtTime(0, D); o.connect(g).connect(out); o.start(); o.stop(D); break; }
+    case 'riser': {
+      const s = nsrc(); const bp = filt('bandpass', 200, 2); bp.frequency.exponentialRampToValueAtTime(7000, D); const g = gain(0); g.gain.linearRampToValueAtTime(.9, D - .05); g.gain.linearRampToValueAtTime(0, D); s.connect(bp).connect(g).connect(out); s.start();
+      const o = oc.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(110, 0); o.frequency.exponentialRampToValueAtTime(880, D); const g2 = gain(0); g2.gain.linearRampToValueAtTime(.12, D - .05); g2.gain.linearRampToValueAtTime(0, D); o.connect(g2).connect(out); o.start(); o.stop(D); break;
+    }
+    case 'applause': for (let i = 0; i < 420; i++) { const t = Math.random() * (D - .1), env = Math.sin(Math.PI * t / D); hit(t, .02 + Math.random() * .03, .25 * env + .02, 'bandpass', 1200 + Math.random() * 2500); } break;
+    case 'cash': hit(0, .05, .8, 'highpass', 3000); hit(.08, .05, .6, 'highpass', 3000); tone('sine', 2093, 2093, .12, 1, .35); tone('sine', 2637, 2637, .16, 1, .3); break;
+    case 'beat': {
+      const bpm = 120, sp = 60 / bpm;
+      for (let i = 0; i * sp < D - .01; i++) { const t = i * sp; tone('sine', 150, 42, t, .32, 1); if (i % 2) { hit(t, .18, .55, 'highpass', 1400); tone('triangle', 220, 180, t, .1, .25); } }
+      for (let i = 0; i * sp / 2 < D - .01; i++) hit(i * sp / 2 + (i % 2 ? .01 : 0), .05, i % 2 ? .12 : .2, 'highpass', 7500);
+      break;
+    }
+  }
+  const ab = await oc.startRendering();
+  return new File([wavEncode(ab)], name + '.wav', { type: 'audio/wav' });
+}
+function wavEncode(ab) {
+  const ch = ab.numberOfChannels, n = ab.length, sr = ab.sampleRate, buf = new ArrayBuffer(44 + n * ch * 2), v = new DataView(buf);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); v.setUint32(4, 36 + n * ch * 2, true); ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true); ws(36, 'data'); v.setUint32(40, n * ch * 2, true);
+  const data = []; for (let c = 0; c < ch; c++) data.push(ab.getChannelData(c));
+  let o = 44; for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const s = clamp(data[c][i], -1, 1); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2; }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+/* =========================================================
+   YADDAŞ (IndexedDB avtosaxlama)
+   ========================================================= */
+const DB = {
+  db: null,
+  open() {
+    return new Promise(res => {
+      try {
+        const r = indexedDB.open('kadr-studio', 1);
+        r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' }); if (!d.objectStoreNames.contains('proj')) d.createObjectStore('proj'); };
+        r.onsuccess = () => { this.db = r.result; res(true); }; r.onerror = () => res(false);
+      } catch (e) { res(false); }
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise(res => {
+      if (!this.db) return res(null);
+      try { const t = this.db.transaction(store, mode), r = fn(t.objectStore(store)); t.oncomplete = () => res(r ? (r.result === undefined ? true : r.result) : true); t.onerror = () => res(null); t.onabort = () => res(null); }
+      catch (e) { res(null); }
+    });
+  },
+  saveMedia(m) { if (!m || !media[m.id]) return; return this.tx('media', 'readwrite', s => s.put({ id: m.id, name: m.name, type: m.type, blob: m.blob, duration: m.duration, w: m.w, h: m.h, thumbs: m.thumbs, peaks: m.peaks, beats: m.beats, hasAudio: m.hasAudio })); },
+  del(store, id) { return this.tx(store, 'readwrite', s => s.delete(id)); },
+  getAll(store) { return this.tx(store, 'readonly', s => s.getAll()); },
+  get(store, k) { return this.tx(store, 'readonly', s => s.get(k)); },
+  put(store, k, v) { return this.tx(store, 'readwrite', s => s.put(v, k)); },
+  clear() { return Promise.all([this.tx('media', 'readwrite', s => s.clear()), this.tx('proj', 'readwrite', s => s.clear())]); }
+};
+let saveT = 0;
+function scheduleSave() {
+  clearTimeout(saveT);
+  saveT = setTimeout(async () => {
+    if (!DB.db) return;
+    $('#saveState').textContent = 'Saxlanılır…';
+    const ok = await DB.put('proj', 'current', JSON.stringify(P));
+    $('#saveState').textContent = ok ? '✓ Avtomatik saxlanıldı' : '';
+  }, 1200);
+}
+async function tryRestore() {
+  if (!(await DB.open())) return;
+  const pj = await DB.get('proj', 'current'); if (!pj || typeof pj !== 'string') return;
+  let p; try { p = JSON.parse(pj); } catch (e) { return; }
+  const n = (p.tracks || []).reduce((a, t) => a + t.clips.length, 0);
+  if (!n) return;
+  openModal(`<h3>🗂 Son layihə tapıldı</h3><div class="hint">"<b>${esc(p.name || 'Layihə')}</b>" — ${n} klip. Davam etmək istəyirsiniz?</div>
+  <div class="btnrow" style="margin-top:14px"><button id="rsNew">Yeni layihə</button><button class="primary" id="rsGo">Bərpa et</button></div>`);
+  $('#rsNew').onclick = async () => { closeModal(); await DB.clear(); };
+  $('#rsGo').onclick = async () => {
+    closeModal(); toast('Bərpa olunur…');
+    const recs = (await DB.getAll('media')) || [];
+    for (const r of recs) {
+      const m = Object.assign({}, r, { url: URL.createObjectURL(r.blob) });
+      if (m.type === 'image') { const img = new Image(); img.src = m.url; try { await img.decode(); m.img = img; } catch (e) { continue; } }
+      media[m.id] = m;
+    }
+    P = p; S.sel = null; S.T = 0; H.stack = []; H.idx = -1;
+    $('#projName').value = P.name || 'Layihəm';
+    applyRatio(false); commit(); refreshAll(); renderLeft();
+    for (const m of Object.values(media)) if (!m.thumbs || !m.thumbs.length || ((m.type !== 'image') && !m.peaks)) postProcessMedia(m);
+    toast('✓ Layihə bərpa edildi');
+  };
+}
+async function newProjectAction() {
+  if (allClips().length && !confirm('Cari layihə silinəcək. Davam edilsin?')) return;
+  pause();
+  for (const id of [...els.keys()]) dropEl(id);
+  for (const k in media) { try { URL.revokeObjectURL(media[k].url); } catch (e) { } delete media[k]; }
+  P = newProject(); S.sel = null; S.T = 0; H.stack = []; H.idx = -1;
+  $('#projName').value = P.name;
+  await DB.clear(); applyRatio(false); commit(); refreshAll(); renderLeft();
+}
+
+/* =========================================================
+   KLAVİATURA, DÜYMƏLƏR, BAŞLATMA
+   ========================================================= */
+window.addEventListener('keydown', e => {
+  const tg = e.target;
+  if (tg.matches('input[type=text],input[type=number],textarea,select')) { if (e.key === 'Escape') tg.blur(); return; }
+  if ($('#modalBg').classList.contains('show')) { if (e.key === 'Escape' && !S.exporting) closeModal(); return; }
+  const k = e.key, mod = e.ctrlKey || e.metaKey, lk = k.toLowerCase();
+  if (tg.matches('input[type=range]') && (k.startsWith('Arrow'))) return;
+  if (k === ' ') { e.preventDefault(); togglePlay(); }
+  else if (mod && lk === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (mod && lk === 'y') { e.preventDefault(); redo(); }
+  else if (mod && lk === 'd') { e.preventDefault(); duplicateSel(); }
+  else if (mod && lk === 'c') { copySel(); }
+  else if (mod && lk === 'v') { pasteClip(); }
+  else if (mod && lk === 'b') { e.preventDefault(); splitSel(); }
+  else if (mod && lk === 's') { e.preventDefault(); scheduleSave(); toast('Layihə avtomatik saxlanılır'); }
+  else if (mod && lk === 'e') { e.preventDefault(); exportDialog(); }
+  else if (mod) return;
+  else if (lk === 's') splitSel();
+  else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); deleteSel(); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); pause(); seek(S.T - (e.shiftKey ? 1 : 1 / 30)); refreshProps(true); }
+  else if (k === 'ArrowRight') { e.preventDefault(); pause(); seek(S.T + (e.shiftKey ? 1 : 1 / 30)); refreshProps(true); }
+  else if (k === 'Home') seek(0);
+  else if (k === 'End') seek(projDur());
+  else if (lk === 'm') addMarker();
+  else if (lk === 'q') trimTo('l');
+  else if (lk === 'w') trimTo('r');
+  else if (k === '+' || k === '=') setZoom(S.pps * 1.25);
+  else if (k === '-') setZoom(S.pps / 1.25);
+  else if (k === 'Escape') { select(null); S.pickColor = null; }
+});
+function helpDialog() {
+  const rows = [['Boşluq', 'Oynat / dayandır'], ['S və ya Ctrl+B', 'Playhead-də böl'], ['Delete', 'Klipi sil'], ['Ctrl+D', 'Dublikat'], ['Ctrl+C / Ctrl+V', 'Kopyala / yapışdır'], ['Ctrl+Z / Ctrl+Shift+Z', 'Geri al / irəli'], ['← / →', '1 kadr geri/irəli (Shift: 1 san)'], ['Q / W', 'Sol/sağ hissəni playhead-ə qədər kəs'], ['M', 'Marker əlavə et'], ['+ / −, Ctrl+təkər', 'Taymlaynı böyüt/kiçilt'], ['Home / End', 'Əvvələ / sona'], ['Ctrl+E', 'Eksport'], ['Esc', 'Seçimi ləğv et']];
+  openModal(`<h3>⌨ Klaviatura qısayolları</h3>${rows.map(([a, b]) => `<div class="row"><label style="flex:0 0 160px"><span class="kbd">${a}</span></label><span>${b}</span></div>`).join('')}
+  <div class="hint" style="margin-top:8px">Önizləmədə klipi sürükləyərək yerini, künclərdən ölçüsünü, yuxarı dairədən fırlanmasını dəyişin. Mətnə iki dəfə klik edərək redaktə edin.</div>
+  <div class="btnrow" style="margin-top:14px"><button class="primary" onclick="closeModal()">Bağla</button></div>`);
+}
+function init() {
+  $('#ratioSel').innerHTML = Object.keys(RATIOS).map(k => `<option value="${k}">${RATIO_NAMES[k]}</option>`).join('');
+  $('#ratioSel').onchange = e => { P.ratio = e.target.value; applyRatio(true); commit(); refreshProps(); };
+  $('#pqSel').onchange = e => { S.pq = +e.target.value; applyRatio(false); };
+  $('#playBtn').onclick = togglePlay;
+  $('#prevFrame').onclick = () => { pause(); seek(S.T - 1 / 30); };
+  $('#nextFrame').onclick = () => { pause(); seek(S.T + 1 / 30); };
+  $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
+  $('#newBtn').onclick = newProjectAction;
+  $('#exportBtn').onclick = exportDialog;
+  $('#helpBtn').onclick = helpDialog;
+  $("#snapBtn").onclick = saveFrame;
+  $('#fsBtn').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else cwrap.requestFullscreen && cwrap.requestFullscreen(); };
+  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) { cwrap.style.width = '100vw'; cwrap.style.height = '100vh'; cv.style.objectFit = 'contain'; } else { cv.style.objectFit = ''; fitStage(); } });
+  $('#tSplit').onclick = splitSel; $('#tDel').onclick = deleteSel; $('#tDup').onclick = duplicateSel;
+  $('#tFreeze').onclick = freezeFrame; $('#tDetach').onclick = detachAudio;
+  $('#tTrimL').onclick = () => trimTo('l'); $('#tTrimR').onclick = () => trimTo('r');
+  $('#tMarker').onclick = addMarker;
+  $('#tMagnet').onclick = e => { S.magnet = !S.magnet; e.currentTarget.classList.toggle('on', S.magnet); if (S.magnet) { repackMain(); commit(); refreshAll(); } toast('Maqnit ' + (S.magnet ? 'aktiv' : 'deaktiv')); };
+  $('#tSnap').onclick = e => { S.snap = !S.snap; e.currentTarget.classList.toggle('on', S.snap); toast('Yapışma ' + (S.snap ? 'aktiv' : 'deaktiv')); };
+  $('#projName').onchange = e => { P.name = e.target.value; commit(); };
+  $('#fileIn').onchange = async e => { const f = [...e.target.files]; e.target.value = ''; ensureAudio(); const add = await importFiles(f); if (add.length) toast(add.length + ' fayl idxal edildi'); if (add.length && !allClips().length) for (const m of add) addMediaToTimeline(m, true); };
+  $('#srtIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const items = parseSRT(await f.text()); if (!items.length) { toast('Subtitr tapılmadı'); return; } addSubtitles(items); };
+  $('#modalBg').addEventListener('pointerdown', e => { if (e.target.id === 'modalBg' && !S.exporting && !$('#rsGo')) closeModal(); });
+  // fayl sürükləmə
+  let dragN = 0;
+  window.addEventListener('dragenter', e => { if (e.dataTransfer.types.includes('Files')) { dragN++; $('#dropAll').classList.add('show'); } });
+  window.addEventListener('dragleave', e => { if (e.dataTransfer.types.includes('Files') && --dragN <= 0) { dragN = 0; $('#dropAll').classList.remove('show'); } });
+  window.addEventListener('dragover', e => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); });
+  window.addEventListener('drop', async e => {
+    if (!e.dataTransfer.files.length) return;
+    e.preventDefault(); dragN = 0; $('#dropAll').classList.remove('show'); ensureAudio();
+    const toTl = !!e.target.closest('#timeline') || !allClips().length;
+    const add = await importFiles([...e.dataTransfer.files], { addToTimeline: toTl });
+    if (add.length) toast(add.length + ' fayl idxal edildi');
+  });
+  // taymlayn hündürlüyü
+  $('#splitter').addEventListener('pointerdown', e => {
+    const mv = ev => { const hh = clamp(innerHeight - ev.clientY - 3, 140, innerHeight - 260); $('#app').style.setProperty('--tlh', hh + 'px'); };
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); fitStage(); renderTimeline(); };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+  });
+  new ResizeObserver(() => { fitStage(); drawRuler(); }).observe($('#stage'));
+  window.addEventListener('resize', () => renderTimeline());
+  document.fonts && document.fonts.ready.then(() => { textCache.clear(); S.dirty = true; });
+  $('#zoom').value = Math.round(Math.log2(S.pps / 4) / Math.log2(700 / 4) * 100);
+  renderLeft(); applyRatio(false); commit(); refreshAll();
+  requestAnimationFrame(loop);
+  tryRestore();
+}
+init();
+</script>
+</body>
+</html>
