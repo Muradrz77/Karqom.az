@@ -634,11 +634,20 @@ async function importFiles(files, opts = {}) {
   const added = [];
   for (const f of files) {
     const type = mediaTypeOf(f);
-    if (!type) { toast('Dəstəklənməyən fayl: ' + f.name); continue; }
+    if (!type) {
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      toast(ext === 'heic' || ext === 'heif' ? 'HEIC şəkillər brauzerdə açılmır — JPG/PNG formatına çevirin: ' + f.name : 'Dəstəklənməyən fayl: ' + f.name, 5000);
+      continue;
+    }
+    toast('Yüklənir: ' + f.name + '…', 20000);
     const m = { id: uid(), name: f.name || 'media', type, blob: f, url: URL.createObjectURL(f), duration: 0, w: 0, h: 0, thumbs: [], peaks: null, beats: null };
     media[m.id] = m;
     await probeMedia(m);
-    if (m.error) { toast('Fayl açılmadı: ' + f.name); delete media[m.id]; continue; }
+    if (m.error) {
+      toast(m.error === 'codec' ? `"${f.name}" videosunun kodeki bu brauzerdə dəstəklənmir (çox güman ki HEVC/H.265, iPhone videoları). Google Chrome-da açın və ya videonu MP4 (H.264) formatına çevirin.` : 'Fayl açılmadı (format dəstəklənmir): ' + f.name, 7000);
+      try { URL.revokeObjectURL(m.url); } catch (e) { } delete media[m.id]; continue;
+    }
+    toast('✓ Əlavə edildi: ' + f.name);
     added.push(m);
     renderLeft();
     postProcessMedia(m);
@@ -664,12 +673,19 @@ async function probeMedia(m) {
       if (!isFinite(v.duration)) { // MediaRecorder webm faylları
         v.ondurationchange = () => { if (isFinite(v.duration)) { m.duration = v.duration; fin(); } };
         v.currentTime = 1e9; setTimeout(fin, 4000);
-      } else { m.duration = v.duration; if (m.type === 'video' && !v.videoWidth) setTimeout(fin, 300); else fin(); }
+      } else {
+        m.duration = v.duration;
+        if (m.type === 'video' && !v.videoWidth) {
+          // şəkil ölçüsü yoxdursa — video axını dekod olunmur (məs. HEVC)
+          const chk = () => { if (!v.videoWidth) m.error = 'codec'; fin(); };
+          v.onloadeddata = chk; setTimeout(chk, 2500);
+        } else fin();
+      }
     };
-    v.onerror = () => { m.error = true; fin(); };
+    v.onerror = () => { m.error = (v.error && v.error.code === 4) ? 'codec' : true; fin(); };
     setTimeout(fin, 20000);
   });
-  if (m.type === 'video' && !m.w) { m.w = 1280; m.h = 720; }
+  if (m.type === 'video' && !m.w && !m.error) { m.w = 1280; m.h = 720; }
 }
 async function postProcessMedia(m) {
   if (m.type === 'video' && !(m.thumbs && m.thumbs.length)) await genThumbs(m);
@@ -1764,6 +1780,9 @@ function panelMedia(p) {
   <div class="sub">İpucu</div><div class="hint">Kartı taymlayna sürükləyin və ya <b>+</b> düyməsini basın. Video əsas trekə, şəkillər isə əsas və ya örtük (PIP) trekinə əlavə oluna bilər. Örtük yaratmaq üçün klipi əsas trekin yuxarısına sürükləyin.</div>`;
   $('#impBtn').onclick = () => $('#fileIn').click();
   const dz = $('#dropZone'); dz.onclick = () => $('#fileIn').click();
+  dz.ondragover = e => { if (e.dataTransfer.types.includes('Files')) dz.classList.add('over'); };
+  dz.ondragleave = () => dz.classList.remove('over');
+  dz.addEventListener('drop', () => dz.classList.remove('over'));
   const list = Object.values(media).filter(m => m.type !== 'audio');
   const g = $('#mgrid');
   if (!list.length) g.innerHTML = '<div class="hint" style="grid-column:1/-1">Hələ media yoxdur.</div>';
@@ -2829,6 +2848,16 @@ function helpDialog() {
   <div class="hint" style="margin-top:8px">Önizləmədə klipi sürükləyərək yerini, künclərdən ölçüsünü, yuxarı dairədən fırlanmasını dəyişin. Mətnə iki dəfə klik edərək redaktə edin.</div>
   <div class="btnrow" style="margin-top:14px"><button class="primary" onclick="closeModal()">Bağla</button></div>`);
 }
+/* Proqram önizləmə pəncərəsində və ya telefonda açılıbsa xəbərdarlıq */
+function envWarning() {
+  let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 600;
+  if (!framed && !mobile) return;
+  openModal(`<h3>⚠️ Fayl əlavə etmək işləməyə bilər</h3>
+  <div class="hint" style="font-size:13px">${framed ? 'Proqram başqa tətbiqin daxilində (önizləmə pəncərəsində) açılıb. Bu rejimdə brauzer fayl seçməyə və sürükləyib atmağa icazə vermir.' : 'Proqram telefonda/kiçik ekranda açılıb. Kadr Studio kompüter üçün hazırlanıb: sürükləyib atmaq telefonda işləmir və ekran çox sıx olur.'}
+  <br><br><b>Həlli:</b><br>1. <b>video_editor.html</b> faylını kompüterə <b>yükləyin</b> (Download).<br>2. Fayla sağ klik → <b>Open with → Google Chrome</b>.<br>3. <b>＋ İdxal</b> düyməsini basın və ya videonu pəncərəyə sürükləyin.</div>
+  <div class="btnrow" style="margin-top:14px"><button onclick="closeModal()">Yenə də davam et</button></div>`);
+}
 function init() {
   $('#ratioSel').innerHTML = Object.keys(RATIOS).map(k => `<option value="${k}">${RATIO_NAMES[k]}</option>`).join('');
   $('#ratioSel').onchange = e => { P.ratio = e.target.value; applyRatio(true); commit(); refreshProps(); };
@@ -2876,6 +2905,7 @@ function init() {
   document.fonts && document.fonts.ready.then(() => { textCache.clear(); S.dirty = true; });
   $('#zoom').value = Math.round(Math.log2(S.pps / 4) / Math.log2(700 / 4) * 100);
   renderLeft(); applyRatio(false); commit(); refreshAll();
+  envWarning();
   requestAnimationFrame(loop);
   tryRestore();
 }
