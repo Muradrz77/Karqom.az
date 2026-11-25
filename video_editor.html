@@ -280,6 +280,7 @@ header .grow{flex:1}
    Bütün emal lokal aparılır, fayllar heç yerə göndərilmir.
    ========================================================= */
 const $ = s => document.querySelector(s);
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -692,23 +693,32 @@ async function probeMedia(m) {
   });
   if (m.type === 'video' && !m.w && !m.error) { m.w = 1280; m.h = 720; }
 }
-async function postProcessMedia(m) {
+// Ağır fon işləri (səs dekodu, miniatürlər) növbə ilə, bir-bir görülür
+let procQueue = Promise.resolve();
+function postProcessMedia(m) { const p = procQueue.then(() => postProcessMediaNow(m)).catch(() => { }); procQueue = p; return p; }
+const whilePlaying = async () => { while (S.playing || S.exporting) await new Promise(r => setTimeout(r, 300)); };
+async function postProcessMediaNow(m) {
+  if (!media[m.id]) return;
+  // 1) əvvəlcə səs — oynatma üçün lazım olan budur
+  if ((m.type === 'video' || m.type === 'audio') && (!m.peaks || (!m.abuf && m.hasAudio !== false))) { m.decoding = true; S.dirty = true; await genPeaks(m); m.decoding = false; renderLeft(); refreshTimeline(); refreshProps(); }
+  // 2) sonra miniatürlər (yalnız oynatma dayananda — iPad dekoderini yükləməsin)
   if (m.type === 'video' && !(m.thumbs && m.thumbs.length)) await genThumbs(m);
   if (m.type === 'image' && !(m.thumbs && m.thumbs.length)) {
     const c = document.createElement('canvas'); const th = 60; c.height = th; c.width = Math.max(20, Math.round(th * m.w / m.h));
     c.getContext('2d').drawImage(m.img, 0, 0, c.width, c.height); m.thumbs = [{ t: 0, url: c.toDataURL('image/jpeg', .7) }];
   }
-  if ((m.type === 'video' || m.type === 'audio') && (!m.peaks || (!m.abuf && m.hasAudio !== false))) await genPeaks(m);
   renderLeft(); refreshTimeline(); DB.saveMedia(m);
 }
 async function genThumbs(m) {
-  const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.src = m.url; v.playsInline = true;
+  await whilePlaying();
+  const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.src = m.url; v.playsInline = true; v.setAttribute('playsinline', '');
   if (!(await once(v, 'loadeddata', 8000))) return;
-  const n = clamp(Math.ceil(m.duration / 1.5), 1, 40), th = 60, tw = Math.max(20, Math.round(th * (m.w / m.h || 16 / 9)));
+  const n = clamp(Math.ceil(m.duration / 1.5), 1, IS_IOS ? 16 : 40), th = 60, tw = Math.max(20, Math.round(th * (m.w / m.h || 16 / 9)));
   const c = document.createElement('canvas'); c.width = tw; c.height = th; const g = c.getContext('2d');
   m.thumbs = [];
   for (let i = 0; i < n; i++) {
     const t = Math.min(m.duration - .05, (i + .5) * m.duration / n);
+    if (S.playing || S.exporting) { await whilePlaying(); }
     v.currentTime = Math.max(0, t); await once(v, 'seeked', 3000);
     g.drawImage(v, 0, 0, tw, th); m.thumbs.push({ t, url: c.toDataURL('image/jpeg', .6) });
     if (i === 0) renderLeft();
@@ -717,7 +727,7 @@ async function genThumbs(m) {
   v.removeAttribute('src'); v.load();
 }
 async function genPeaks(m) {
-  if (m.blob.size > 450e6) return;
+  if (m.blob.size > 450e6) { m.noBuf = true; return; }
   try {
     const buf = await m.blob.arrayBuffer();
     // cihazın öz tezliyində dekod et (iPad 48 kHz) — oynadarkən yenidən çevirmə olmasın
@@ -733,9 +743,16 @@ async function genPeaks(m) {
       }
     }
     m.peaks = pk; m.hasAudio = pk.some(v => v > .002);
-    if (m.hasAudio && ab.duration <= 900) { m.abuf = ab; S.dirty = true; } // dəqiq oynatma üçün yaddaşda saxla
+    if (m.hasAudio && ab.duration <= 900) {
+      let use = ab;
+      if (IS_IOS && m.type === 'video' && ab.numberOfChannels > 1 && ab.duration > 120 && AC) { // yaddaşı 2 dəfə azalt
+        use = AC.createBuffer(1, ab.length, ab.sampleRate); const o = use.getChannelData(0), L = ab.getChannelData(0), R = ab.getChannelData(1);
+        for (let i = 0; i < o.length; i++) o[i] = (L[i] + R[i]) * .5;
+      }
+      m.abuf = use; m.noBuf = false; S.dirty = true;
+    } else if (m.hasAudio) m.noBuf = true; // çox uzun fayl — yaddaşda saxlanmır
     if (!m.duration) m.duration = ab.duration;
-  } catch (e) { m.peaks = null; if (m.type === 'video') m.hasAudio = false; }
+  } catch (e) { m.peaks = null; m.noBuf = true; if (m.type === 'video') m.hasAudio = false; }
 }
 function detectBeats(m) {
   const pk = m.peaks; if (!pk) return [];
@@ -842,7 +859,9 @@ function audible(c, tr) { const m = media[c.mediaId]; return !(c.muted || tr.mut
 /** Klip səsi AudioBuffer ilə oynadıla bilərmi? (dəqiq, qırılmasız yol) */
 function useBuffer(c) {
   const m = media[c.mediaId];
-  return !!(AC && ACK.mode === 'ac' && m && m.abuf && !c.curve && !((c.speed || 1) !== 1 && c.keepPitch !== false));
+  if (!(AC && ACK.mode === 'ac' && m && m.abuf)) return false;
+  if (IS_IOS) return true; // iPad-də video elementinin səsi qırıq gəlir — həmişə dəqiq yol
+  return !c.curve && !((c.speed || 1) !== 1 && c.keepPitch !== false);
 }
 function stopAB(id) { const e = AB.get(id); if (!e) return; try { e.src.stop(); } catch (x) { } try { e.src.disconnect(); e.g.disconnect(); e.gl.disconnect(); e.nodes.forEach(n => n.disconnect()); } catch (x) { } AB.delete(id); }
 function stopAllAB() { for (const id of [...AB.keys()]) stopAB(id); }
@@ -852,14 +871,19 @@ function scheduleAudio() {
     if (!hasAudio(c) || !useBuffer(c) || !audible(c, tr)) continue;
     if (c.start + c.dur <= tb + .01 || c.start > tb + 1.5) continue;
     const m = media[c.mediaId], sp = c.speed || 1;
-    const sig = [c.start, c.in, c.dur, sp, c.mediaId, enhSig(c), ACK.acT0, c.fadeIn, c.fadeOut, hasVolKf(c) ? JSON.stringify(c.kf.volume) : ''].join('|');
+    const sig = [c.start, c.in, c.dur, sp, c.mediaId, enhSig(c), ACK.acT0, c.fadeIn, c.fadeOut, hasVolKf(c) ? JSON.stringify(c.kf.volume) : '', c.curve ? c.curve.join(',') : ''].join('|');
     seen.add(c.id);
     const old = AB.get(c.id); if (old && old.sig === sig) continue; if (old) stopAB(c.id);
     let when, lt;
     if (c.start >= tb) { when = ACK.acT0 + (c.start - ACK.tlT0); lt = 0; } else { when = base; lt = tb - c.start; }
-    const off = c.in + lt * sp, len = (c.dur - lt) * sp;
+    const off = c.in + srcOffset(c, lt), len = srcLen(c) - srcOffset(c, lt);
     if (len <= .01 || off >= m.abuf.duration) continue;
-    const src = AC.createBufferSource(); src.buffer = m.abuf; src.playbackRate.value = sp;
+    const src = AC.createBufferSource(); src.buffer = m.abuf; src.playbackRate.value = rateAt(c, lt);
+    if (c.curve) { // sürət əyrisi: playbackRate zərfi
+      const tl0 = c.dur - lt, n = clamp(Math.ceil(tl0 * 30), 2, 30000), rc = new Float32Array(n);
+      for (let i = 0; i < n; i++) rc[i] = clamp(rateAt(c, lt + tl0 * i / (n - 1)), .0625, 16);
+      try { src.playbackRate.setValueCurveAtTime(rc, when, Math.max(.01, tl0)); } catch (e) { }
+    }
     const g = AC.createGain(), gl = AC.createGain(); // g: zərf (fade/keyframe), gl: canlı səviyyə
     const tl = c.dur - lt, kf = hasVolKf(c), env = l => kf ? gainAt(c, l) : fadeAt(c, l);
     if (kf || c.fadeIn > 0 || c.fadeOut > 0) {
@@ -870,7 +894,7 @@ function scheduleAudio() {
     } else g.gain.value = 1;
     const cache = { l: liveGain(c, tr) }; gl.gain.value = cache.l;
     const ch = buildEnh(c, g); src.connect(ch.head); g.connect(gl); gl.connect(master);
-    src.start(when, off, len);
+    src.start(when, off, len); try { src.stop(when + (c.dur - lt) + .05); } catch (e) { }
     AB.set(c.id, { src, g, gl, cache, nodes: ch.nodes, sig });
   }
   for (const id of [...AB.keys()]) if (!seen.has(id)) stopAB(id);
@@ -893,7 +917,7 @@ function getEl(c) {
   if (v) dropEl(c.id);
   const el = document.createElement(m.type === 'audio' ? 'audio' : 'video');
   // səssiz başlayır: səssiz video hər brauzerdə (iPad daxil) icazəsiz oynaya bilir
-  el.preload = 'auto'; el.playsInline = true; el.setAttribute('playsinline', ''); el.muted = true; el.src = m.url;
+  el.preload = 'auto'; el.playsInline = true; el.setAttribute('playsinline', ''); el.muted = true; el.defaultMuted = true; el.setAttribute('muted', ''); el.src = m.url;
   v = { el, mediaId: c.mediaId, node: null, gain: null, chain: null, enhSig: null, pending: null };
   el.addEventListener('seeked', () => {
     if (v.pending != null) { const p = v.pending; v.pending = null; if (Math.abs(el.currentTime - p) > .02) el.currentTime = p; }
@@ -935,11 +959,22 @@ function sync(t, playing) {
       if (buf) { const e = AB.get(c.id); if (e) setParam(e.gl.gain, liveGain(c, tr), e.cache, 'l'); }
       // səs klipi bufer ilə oynayırsa, media elementinə ehtiyac yoxdur
       if (c.kind === 'audio' && buf) { if (els.has(c.id)) dropEl(c.id); continue; }
-      const pre = (c.trans ? c.trans.dur : 0) + (playing ? .8 : .05);
+      // növbəti klipin videosu əvvəlcədən (2.5 san) hazırlanır ki, keçiddə donmasın
+      const pre = (c.trans ? c.trans.dur : 0) + (playing ? 2.5 : .05);
       const inWin = t >= c.start - pre && t < c.start + c.dur;
-      if (!inWin) { const v = els.get(c.id); if (v) { if (!v.el.paused) v.el.pause(); setGain(v, 0); } continue; }
+      if (!inWin) {
+        const v = els.get(c.id);
+        if (v) {
+          // uzaqdakı kliplərin video dekoderini burax (iPad yaddaşı və dekoder limiti)
+          if (t < c.start - 8 || t > c.start + c.dur + 3) dropEl(c.id);
+          else { if (!v.el.paused) v.el.pause(); setGain(v, 0); }
+        }
+        continue;
+      }
       const v = getEl(c); if (!v) continue;
-      const wantSound = !buf && aud;
+      // iPad-də səs heç vaxt video elementindən verilmir: onun səsini açmaq iPad-də videonu dayandırır.
+      // Səs hazırlanarkən (dekod) bu klip qısa müddət səssiz oynayır.
+      const wantSound = !buf && aud && !(IS_IOS && (m.decoding || (!m.abuf && !m.noBuf) || !AC));
       if (wantSound) connectEl(v, c);
       const target = clamp(c.in + srcOffset(c, Math.max(0, lt)), 0, Math.max(0, (m.duration || 1e9) - .02));
       const el = v.el;
@@ -948,10 +983,12 @@ function sync(t, playing) {
         if ('preservesPitch' in el) el.preservesPitch = c.keepPitch !== false;
         if (el.paused) { if (Math.abs(el.currentTime - target) > .05) el.currentTime = target; if (Math.abs(el.playbackRate - r) > .001) el.playbackRate = r; el.play().catch(() => { }); }
         else if (!el.seeking) {
-          const drift = el.currentTime - target;
-          // böyük fərqdə atla, kiçik fərqi sürəti az dəyişərək hiss olunmadan düzəlt (səs qırılmır)
-          if (Math.abs(drift) > .5) el.currentTime = target;
-          else { const nr = Math.abs(drift) > .03 ? r * (1 - clamp(drift * 1.5, -.08, .08)) : r; if (Math.abs(el.playbackRate - nr) > .002) el.playbackRate = nr; }
+          const drift = el.currentTime - target, nowT = performance.now();
+          // böyük fərqdə atla; kiçik fərqi sürəti az dəyişərək düzəlt, amma tez-tez yox (iPad dekoderi hər dəyişikliyə reaksiya verir)
+          if (Math.abs(drift) > .5) { el.currentTime = target; v.nudging = false; }
+          else if (Math.abs(drift) > .08 && nowT - (v.nudgeT || 0) > (IS_IOS ? 1000 : 500)) { el.playbackRate = r * (1 - clamp(drift * 1.5, -.08, .08)); v.nudging = true; v.nudgeT = nowT; }
+          else if (v.nudging && Math.abs(drift) < .02) { el.playbackRate = r; v.nudging = false; v.nudgeT = nowT; }
+          else if (!v.nudging && Math.abs(el.playbackRate - r) > .001) el.playbackRate = r;
         }
         setGain(v, wantSound ? gainAt(c, lt) : 0);
         if (!wantSound && !el.muted && !v.gain) el.muted = true;
