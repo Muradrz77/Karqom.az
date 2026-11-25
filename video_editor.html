@@ -720,8 +720,9 @@ async function genPeaks(m) {
   if (m.blob.size > 450e6) return;
   try {
     const buf = await m.blob.arrayBuffer();
-    const oac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
-    const ab = await new Promise((res, rej) => { const p = oac.decodeAudioData(buf, res, rej); if (p && p.then) p.then(res, rej); });
+    // cihazın öz tezliyində dekod et (iPad 48 kHz) — oynadarkən yenidən çevirmə olmasın
+    const dc = getAC() || new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+    const ab = await new Promise((res, rej) => { let done = false; const ok = b => { if (!done) { done = true; res(b); } }, no = e => { if (!done) { done = true; rej(e); } }; const p = dc.decodeAudioData(buf, ok, no); if (p && p.then) p.then(ok, no); });
     const rate = 100, n = Math.ceil(ab.duration * rate), pk = new Float32Array(n), step = ab.sampleRate / rate;
     for (let ch = 0; ch < ab.numberOfChannels; ch++) {
       const d = ab.getChannelData(ch);
@@ -732,7 +733,7 @@ async function genPeaks(m) {
       }
     }
     m.peaks = pk; m.hasAudio = pk.some(v => v > .002);
-    if (m.hasAudio && ab.duration <= 1500) { m.abuf = ab; S.dirty = true; } // dəqiq oynatma üçün yaddaşda saxla
+    if (m.hasAudio && ab.duration <= 900) { m.abuf = ab; S.dirty = true; } // dəqiq oynatma üçün yaddaşda saxla
     if (!m.duration) m.duration = ab.duration;
   } catch (e) { m.peaks = null; if (m.type === 'video') m.hasAudio = false; }
 }
@@ -756,21 +757,40 @@ let AC = null, master = null, limiter = null, streamDest = null;
 const els = new Map(); // clipId -> {el, mediaId, node, gain, chain, enhSig, pending}
 const AB = new Map();  // clipId -> {src, g, nodes, sig}  (AudioBuffer ilə planlanmış səs)
 const ACK = { mode: 'perf', acT0: 0, tlT0: 0 };
-function ensureAudio() {
+let silentEl = null;
+function getAC() {
   if (!AC) {
     try {
+      // iPad/iPhone: "playback" rejimi — səssiz düymə və digər tətbiqlər səsi kəsməsin
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
       AC = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'playback' });
       master = AC.createGain();
       // yumşaq limiter: normal səs dəyişmir, 100%-dən yuxarı zirvələr xırıltısız yumşaq kəsilir (maks. 0.89 ≈ -1 dB)
       const pre = AC.createGain(); pre.gain.value = .5;
       limiter = AC.createWaveShaper(); const N = 8192, cur = new Float32Array(N);
       for (let i = 0; i < N; i++) { const u = (i / (N - 1) * 2 - 1) * 2, au = Math.abs(u); cur[i] = Math.sign(u) * (au < .72 ? au : .72 + .17 * Math.tanh((au - .72) / .17)); }
-      limiter.curve = cur; limiter.oversample = '4x';
+      limiter.curve = cur; limiter.oversample = 'none';
       master.connect(pre); pre.connect(limiter); limiter.connect(AC.destination);
-      streamDest = AC.createMediaStreamDestination(); limiter.connect(streamDest);
+      try { streamDest = AC.createMediaStreamDestination(); limiter.connect(streamDest); } catch (e) { streamDest = null; }
+      // iPad səsi dayandırıb bərpa edəndə (bildiriş, zəng, fon) saatı yenidən sinxronla
+      AC.onstatechange = () => { if (S.playing) anchorClock(); };
     } catch (e) { AC = null; }
   }
-  if (AC && AC.state !== 'running') { const p = AC.resume(); if (p && p.then) p.then(() => { if (S.playing && ACK.mode !== 'ac') anchorClock(); }); }
+  return AC;
+}
+function unlockIOS() {
+  if (silentEl || navigator.audioSession) return;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  if (!ios) return;
+  // köhnə iOS: səssiz audio elementi səs sessiyasını "playback" rejiminə keçirir
+  const n = 4000, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  silentEl = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); silentEl.loop = true; silentEl.setAttribute('playsinline', '');
+  silentEl.play().catch(() => { silentEl = null; });
+}
+function ensureAudio() {
+  getAC(); unlockIOS();
+  if (AC && AC.state !== 'running') { try { AC.resume(); } catch (e) { } }
 }
 /* --- saat: səs kartının saatı (dəqiq) və ya performance.now (ehtiyat) --- */
 function acHeard() {
@@ -803,11 +823,20 @@ function buildEnh(c, out) {
   if (nodes.length) nodes[nodes.length - 1].connect(out);
   return { head: nodes[0] || out, nodes };
 }
-function gainAt(c, lt) {
-  let g = evalProp(c, 'volume', lt);
+function fadeAt(c, lt) {
+  let g = 1;
   if (c.fadeIn > 0) g *= clamp(lt / c.fadeIn, 0, 1);
   if (c.fadeOut > 0) g *= clamp((c.dur - lt) / c.fadeOut, 0, 1);
-  return Math.max(0, g);
+  return g;
+}
+function gainAt(c, lt) { return Math.max(0, evalProp(c, 'volume', lt) * fadeAt(c, lt)); }
+function hasVolKf(c) { return !!(c.kf && c.kf.volume && c.kf.volume.length); }
+/** canlı səviyyə (yalnız dəyişəndə göndərilir) — qalan zərf (fade, keyframe) əvvəlcədən planlanır */
+function liveGain(c, tr) { return audible(c, tr) ? (hasVolKf(c) ? 1 : Math.max(0, c.volume == null ? 1 : c.volume)) : 0; }
+function setParam(p, v, cache, key) {
+  if (cache[key] != null && Math.abs(cache[key] - v) < .003) return;
+  cache[key] = v; const t = AC.currentTime;
+  try { p.cancelScheduledValues(t); p.setValueAtTime(p.value, t); p.linearRampToValueAtTime(v, t + .03); } catch (e) { p.value = v; }
 }
 function audible(c, tr) { const m = media[c.mediaId]; return !(c.muted || tr.muted || (tr.kind !== 'audio' && tr.hidden) || (m && m.hasAudio === false)); }
 /** Klip səsi AudioBuffer ilə oynadıla bilərmi? (dəqiq, qırılmasız yol) */
@@ -815,7 +844,7 @@ function useBuffer(c) {
   const m = media[c.mediaId];
   return !!(AC && ACK.mode === 'ac' && m && m.abuf && !c.curve && !((c.speed || 1) !== 1 && c.keepPitch !== false));
 }
-function stopAB(id) { const e = AB.get(id); if (!e) return; try { e.src.stop(); } catch (x) { } try { e.src.disconnect(); e.g.disconnect(); e.nodes.forEach(n => n.disconnect()); } catch (x) { } AB.delete(id); }
+function stopAB(id) { const e = AB.get(id); if (!e) return; try { e.src.stop(); } catch (x) { } try { e.src.disconnect(); e.g.disconnect(); e.gl.disconnect(); e.nodes.forEach(n => n.disconnect()); } catch (x) { } AB.delete(id); }
 function stopAllAB() { for (const id of [...AB.keys()]) stopAB(id); }
 function scheduleAudio() {
   const now = AC.currentTime, base = Math.max(now, ACK.acT0), tb = ACK.tlT0 + (base - ACK.acT0), seen = new Set();
@@ -823,7 +852,7 @@ function scheduleAudio() {
     if (!hasAudio(c) || !useBuffer(c) || !audible(c, tr)) continue;
     if (c.start + c.dur <= tb + .01 || c.start > tb + 1.5) continue;
     const m = media[c.mediaId], sp = c.speed || 1;
-    const sig = [c.start, c.in, c.dur, sp, c.mediaId, enhSig(c), ACK.acT0].join('|');
+    const sig = [c.start, c.in, c.dur, sp, c.mediaId, enhSig(c), ACK.acT0, c.fadeIn, c.fadeOut, hasVolKf(c) ? JSON.stringify(c.kf.volume) : ''].join('|');
     seen.add(c.id);
     const old = AB.get(c.id); if (old && old.sig === sig) continue; if (old) stopAB(c.id);
     let when, lt;
@@ -831,10 +860,18 @@ function scheduleAudio() {
     const off = c.in + lt * sp, len = (c.dur - lt) * sp;
     if (len <= .01 || off >= m.abuf.duration) continue;
     const src = AC.createBufferSource(); src.buffer = m.abuf; src.playbackRate.value = sp;
-    const g = AC.createGain(); g.gain.value = 0; g.gain.setValueAtTime(gainAt(c, lt), when);
-    const ch = buildEnh(c, g); src.connect(ch.head); g.connect(master);
+    const g = AC.createGain(), gl = AC.createGain(); // g: zərf (fade/keyframe), gl: canlı səviyyə
+    const tl = c.dur - lt, kf = hasVolKf(c), env = l => kf ? gainAt(c, l) : fadeAt(c, l);
+    if (kf || c.fadeIn > 0 || c.fadeOut > 0) {
+      const n = clamp(Math.ceil(tl * 30), 2, 30000), cv = new Float32Array(n);
+      for (let i = 0; i < n; i++) cv[i] = env(lt + tl * i / (n - 1));
+      g.gain.value = cv[0];
+      try { g.gain.setValueCurveAtTime(cv, when, Math.max(.01, tl)); } catch (e) { }
+    } else g.gain.value = 1;
+    const cache = { l: liveGain(c, tr) }; gl.gain.value = cache.l;
+    const ch = buildEnh(c, g); src.connect(ch.head); g.connect(gl); gl.connect(master);
     src.start(when, off, len);
-    AB.set(c.id, { src, g, nodes: ch.nodes, sig });
+    AB.set(c.id, { src, g, gl, cache, nodes: ch.nodes, sig });
   }
   for (const id of [...AB.keys()]) if (!seen.has(id)) stopAB(id);
 }
@@ -872,8 +909,9 @@ function dropEl(id) {
   els.delete(id);
 }
 function setGain(v, g) {
-  if (v.gain) { v.gain.gain.setTargetAtTime(g, AC.currentTime, .015); if (g > 0 && v.el.muted) v.el.muted = false; }
-  else { v.el.volume = clamp(g, 0, 1); v.el.muted = g <= 0; }
+  v.cache = v.cache || {};
+  if (v.gain) { setParam(v.gain.gain, g, v.cache, 'g'); if (g > 0 && v.el.muted) v.el.muted = false; }
+  else { const vol = clamp(g, 0, 1); if (Math.abs(v.el.volume - vol) > .003) v.el.volume = vol; if (v.el.muted !== (g <= 0)) v.el.muted = g <= 0; }
 }
 function seekEl(v, target) {
   const el = v.el;
@@ -894,7 +932,7 @@ function sync(t, playing) {
       if (!hasAudio(c)) continue;
       const m = media[c.mediaId]; if (!m) continue;
       const lt = t - c.start, buf = useBuffer(c), aud = audible(c, tr);
-      if (buf) { const e = AB.get(c.id); if (e && playing && lt >= 0 && lt <= c.dur) e.g.gain.setTargetAtTime(aud ? gainAt(c, lt) : 0, AC.currentTime, .02); }
+      if (buf) { const e = AB.get(c.id); if (e) setParam(e.gl.gain, liveGain(c, tr), e.cache, 'l'); }
       // səs klipi bufer ilə oynayırsa, media elementinə ehtiyac yoxdur
       if (c.kind === 'audio' && buf) { if (els.has(c.id)) dropEl(c.id); continue; }
       const pre = (c.trans ? c.trans.dur : 0) + (playing ? .8 : .05);
